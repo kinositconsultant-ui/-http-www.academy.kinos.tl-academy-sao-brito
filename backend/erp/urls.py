@@ -1,10 +1,23 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from . import views
+from . import portal_views
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/api/dashboard/", permanent=False)),
     path("dashboard/", views.dashboard, name="dashboard"),
+
+    # Parent portal
+    path("parent/", portal_views.parent_dashboard, name="parent_dashboard"),
+    path("parent/student/<int:pk>/", portal_views.parent_student_detail, name="parent_student_detail"),
+
+    # Bulk PDF report cards
+    path("classes/<int:class_id>/report-cards.zip", portal_views.class_report_cards_zip, name="class_report_cards_zip"),
+
+    # Stripe online payments
+    path("invoices/<int:pk>/pay-online/", portal_views.invoice_pay_online, name="invoice_pay_online"),
+    path("invoices/<int:pk>/payment-status/", portal_views.invoice_payment_status, name="invoice_payment_status"),
+    path("webhook/stripe", portal_views.stripe_webhook, name="stripe_webhook"),
 
     # Academic years
     path("years/", views.academic_year_list, name="academic_year_list"),

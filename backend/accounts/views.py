@@ -10,6 +10,14 @@ def admin_required(view_func):
 
 
 @login_required
+def post_login_redirect(request):
+    """Send parents to /api/parent/, everyone else to /api/dashboard/."""
+    if request.user.is_authenticated and request.user.role == "parent" and not request.user.is_superuser:
+        return redirect("/api/parent/")
+    return redirect("/api/dashboard/")
+
+
+@login_required
 def school_profile(request):
     school = School.get_active()
     if request.method == "POST":

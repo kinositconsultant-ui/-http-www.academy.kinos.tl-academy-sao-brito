@@ -11,6 +11,7 @@ urlpatterns = [
     ), name="login"),
     path("logout/", auth_views.LogoutView.as_view(next_page="/api/login/"),
          name="logout"),
+    path("post-login/", views.post_login_redirect, name="post_login_redirect"),
     path("school/", views.school_profile, name="school_profile"),
     path("users/", views.user_list, name="user_list"),
     path("users/add/", views.user_create, name="user_create"),

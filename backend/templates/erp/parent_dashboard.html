@@ -1,0 +1,51 @@
+{% extends "parent_base.html" %}
+{% load humanize %}
+{% block title %}Parent Portal{% endblock %}
+
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10">
+  {% if messages %}{% for message in messages %}<div class="mb-4 rounded-md bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">{{ message }}</div>{% endfor %}{% endif %}
+
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Welcome</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">Your Children</h1>
+  <p class="mt-2 text-sm text-zinc-500">Review grades, attendance, and pay outstanding invoices online.</p>
+
+  {% if rows %}
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="parent-children-grid">
+    {% for r in rows %}
+    <a href="/api/parent/student/{{ r.student.id }}/" data-testid="open-child-{{ r.student.id }}"
+       class="block bg-white rounded-lg border border-zinc-200 p-6 hover:border-blue-600 hover:shadow-md transition-all">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="font-display text-xl font-semibold text-zinc-900">{{ r.student.full_name }}</div>
+          <div class="text-sm text-zinc-500">{{ r.student.school_class|default:"No class assigned" }} · {{ r.student.admission_no }}</div>
+        </div>
+        {% if r.balance > 0 %}
+          <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200" data-testid="child-balance-{{ r.student.id }}">
+            Balance: {{ school.currency }} {{ r.balance|floatformat:2|intcomma }}
+          </span>
+        {% else %}
+          <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200" data-testid="child-balance-{{ r.student.id }}">No fees due</span>
+        {% endif %}
+      </div>
+      <div class="mt-4 pt-4 border-t border-zinc-100">
+        <div class="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Latest grades</div>
+        {% for g in r.grades %}
+          <div class="flex items-center justify-between text-sm py-1">
+            <span>{{ g.subject.name }}</span>
+            <span class="tabular-nums font-medium {% if g.is_pass %}text-emerald-700{% else %}text-red-700{% endif %}">{{ g.percentage }}% · {{ g.letter }}</span>
+          </div>
+        {% empty %}
+          <p class="text-xs text-zinc-400">No grades yet.</p>
+        {% endfor %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="mt-12 bg-white rounded-lg border border-zinc-200 p-12 text-center">
+    <p class="text-zinc-500">No children are linked to your account. Please contact the school office.</p>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

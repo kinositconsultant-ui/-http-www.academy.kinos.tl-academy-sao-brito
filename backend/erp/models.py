@@ -82,6 +82,13 @@ class Student(models.Model):
     enrollment_date = models.DateField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
+    # Parent portal access (links student → User with role=parent)
+    parent_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="children",
+        limit_choices_to={"role": "parent"},
+        help_text="Parent accounts that can view this student in the parent portal.",
+    )
+
     class Meta:
         ordering = ["-id"]
 
@@ -446,3 +453,36 @@ class LeaveRequest(models.Model):
     @property
     def days(self):
         return (self.end_date - self.start_date).days + 1
+
+
+# ---------- Stripe payment transactions ----------
+
+class PaymentTransaction(models.Model):
+    """Audit trail for Stripe Checkout sessions linked to fee invoices."""
+    STATUS = [
+        ("initiated", "Initiated"),
+        ("pending", "Pending"),
+        ("paid", "Paid"),
+        ("expired", "Expired"),
+        ("failed", "Failed"),
+    ]
+    invoice = models.ForeignKey(FeeInvoice, on_delete=models.CASCADE,
+                                related_name="stripe_transactions")
+    session_id = models.CharField(max_length=255, unique=True)
+    payment_id = models.CharField(max_length=255, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=8, default="usd")
+    status = models.CharField(max_length=20, choices=STATUS, default="initiated")
+    payment_status = models.CharField(max_length=40, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                     null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"TX {self.session_id[:12]}… {self.status}"
+

@@ -1,8 +1,10 @@
 """Django settings for academy_erp."""
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
@@ -82,7 +84,7 @@ DATABASES = {
 AUTH_USER_MODEL = "accounts.User"
 
 LOGIN_URL = "/api/login/"
-LOGIN_REDIRECT_URL = "/api/dashboard/"
+LOGIN_REDIRECT_URL = "/api/post-login/"
 LOGOUT_REDIRECT_URL = "/api/login/"
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -108,6 +110,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
+
+# Stripe (via emergentintegrations)
+STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 
 SESSION_COOKIE_NAME = "academy_erp_sessionid"
 CSRF_COOKIE_NAME = "academy_erp_csrftoken"

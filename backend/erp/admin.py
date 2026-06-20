@@ -6,5 +6,6 @@ for m in [
     models.Teacher, models.Attendance, models.Grade, models.FeeStructure,
     models.FeeInvoice, models.FeePayment, models.SalaryPayment, models.Expense,
     models.Income, models.Donor, models.Donation, models.Employee, models.LeaveRequest,
+    models.PaymentTransaction,
 ]:
     admin.site.register(m)
