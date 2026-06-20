@@ -86,13 +86,17 @@ def _student_block(student, styles):
         [Paragraph("DATE OF BIRTH", styles["label"]),
          Paragraph(student.date_of_birth.isoformat() if student.date_of_birth else "—",
                    styles["value"])],
-        [Paragraph("PARENT / GUARDIAN", styles["label"]),
-         Paragraph(student.parent_name or "—", styles["value"])],
-        [Paragraph("CONTACT", styles["label"]),
-         Paragraph(student.parent_phone or student.parent_email or "—",
-                   styles["value"])],
+        [Paragraph("FATHER", styles["label"]),
+         Paragraph(student.father_name or "—", styles["value"])],
+        [Paragraph("MOTHER", styles["label"]),
+         Paragraph(student.mother_name or "—", styles["value"])],
+        [Paragraph("ID (TYPE / NO.)", styles["label"]),
+         Paragraph(
+             f"{student.get_id_type_display() or '—'} · {student.id_number or '—'}",
+             styles["value"])],
+        [Paragraph("ADDRESS", styles["label"]),
+         Paragraph(student.full_address, styles["value"])],
     ]
-    # 2 columns wide, 3 rows
     rows = [cells[i:i + 2] for i in range(0, len(cells), 2)]
     flat = []
     for r in rows:

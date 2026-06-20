@@ -38,6 +38,12 @@ class Subject(models.Model):
         return f"{self.name} ({self.code})"
 
 
+class IDType(models.TextChoices):
+    BI = "bi", "BI"
+    ELECTORAL = "electoral", "Electoral"
+    PASSPORT = "passport", "Passport"
+
+
 class Student(models.Model):
     GENDER_CHOICES = [("M", "Male"), ("F", "Female"), ("O", "Other")]
 
@@ -48,12 +54,32 @@ class Student(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     school_class = models.ForeignKey(SchoolClass, on_delete=models.SET_NULL,
                                      null=True, blank=True, related_name="students")
-    parent_name = models.CharField(max_length=120, blank=True)
+
+    # Parents (split)
+    father_name = models.CharField(max_length=120, blank=True)
+    mother_name = models.CharField(max_length=120, blank=True)
     parent_phone = models.CharField(max_length=30, blank=True)
     parent_email = models.EmailField(blank=True)
-    address = models.TextField(blank=True)
-    enrollment_date = models.DateField(auto_now_add=True)
+
+    # Identification
+    id_type = models.CharField(max_length=20, choices=IDType.choices,
+                               blank=True, default="")
+    id_number = models.CharField(max_length=60, blank=True)
+
+    # Structured address
+    village = models.CharField(max_length=100, blank=True)
+    subvillage = models.CharField(max_length=100, blank=True)
+    subdistrict = models.CharField(max_length=100, blank=True)
+    district = models.CharField(max_length=100, blank=True)
+    address = models.TextField(blank=True, help_text="Additional address details (optional)")
+
+    # Documents
+    school_certificate = models.FileField(
+        upload_to="student_docs/certificates/", blank=True, null=True,
+        help_text="Upload the student's last school certificate.")
     photo = models.ImageField(upload_to="students/", blank=True, null=True)
+
+    enrollment_date = models.DateField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -62,6 +88,23 @@ class Student(models.Model):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def parents_display(self):
+        parts = []
+        if self.father_name:
+            parts.append(f"Father: {self.father_name}")
+        if self.mother_name:
+            parts.append(f"Mother: {self.mother_name}")
+        return " · ".join(parts) or "—"
+
+    @property
+    def full_address(self):
+        parts = [self.village, self.subvillage, self.subdistrict, self.district]
+        parts = [p for p in parts if p]
+        if self.address:
+            parts.append(self.address)
+        return ", ".join(parts) or "—"
 
     def __str__(self):
         return f"{self.full_name} [{self.admission_no}]"
@@ -73,8 +116,33 @@ class Teacher(models.Model):
     last_name = models.CharField(max_length=80)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=30, blank=True)
-    qualification = models.CharField(max_length=120, blank=True)
+
+    # Parents
+    father_name = models.CharField(max_length=120, blank=True)
+    mother_name = models.CharField(max_length=120, blank=True)
+
+    # Identification
+    id_type = models.CharField(max_length=20, choices=IDType.choices,
+                               blank=True, default="")
+    id_number = models.CharField(max_length=60, blank=True)
+
+    # Academic background
+    qualification = models.CharField(max_length=120, blank=True,
+                                     help_text="Highest qualification, e.g. 'MA Mathematics'")
     specialization = models.CharField(max_length=120, blank=True)
+    education_background = models.TextField(
+        blank=True, help_text="Schools attended, degrees, certifications, year-by-year.")
+    diploma_certificate = models.FileField(
+        upload_to="teacher_docs/diplomas/", blank=True, null=True,
+        help_text="Upload diploma / certificate scan.")
+
+    # Structured address
+    village = models.CharField(max_length=100, blank=True)
+    subvillage = models.CharField(max_length=100, blank=True)
+    subdistrict = models.CharField(max_length=100, blank=True)
+    district = models.CharField(max_length=100, blank=True)
+    address = models.TextField(blank=True, help_text="Additional address details (optional)")
+
     hire_date = models.DateField(null=True, blank=True)
     monthly_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     subjects = models.ManyToManyField(Subject, blank=True, related_name="teachers")
@@ -87,6 +155,23 @@ class Teacher(models.Model):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def parents_display(self):
+        parts = []
+        if self.father_name:
+            parts.append(f"Father: {self.father_name}")
+        if self.mother_name:
+            parts.append(f"Mother: {self.mother_name}")
+        return " · ".join(parts) or "—"
+
+    @property
+    def full_address(self):
+        parts = [self.village, self.subvillage, self.subdistrict, self.district]
+        parts = [p for p in parts if p]
+        if self.address:
+            parts.append(self.address)
+        return ", ".join(parts) or "—"
 
     def __str__(self):
         return f"{self.full_name} [{self.employee_no}]"

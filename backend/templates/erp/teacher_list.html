@@ -11,6 +11,8 @@
     <thead class="bg-zinc-50"><tr>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Emp No.</th>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Name</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Parents</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">ID</th>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Contact</th>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Specialization</th>
       <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Salary</th>
@@ -21,6 +23,14 @@
       <tr>
         <td class="px-6 py-4 text-sm font-mono text-zinc-700">{{ t.employee_no }}</td>
         <td class="px-6 py-4 text-sm font-medium text-zinc-900">{{ t.full_name }}<div class="text-xs text-zinc-500">{{ t.qualification }}</div></td>
+        <td class="px-6 py-4 text-sm text-zinc-700">
+          <div>F: {{ t.father_name|default:"—" }}</div>
+          <div>M: {{ t.mother_name|default:"—" }}</div>
+        </td>
+        <td class="px-6 py-4 text-sm text-zinc-700">
+          {% if t.id_type %}<span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200">{{ t.get_id_type_display }}</span>{% endif %}
+          <div class="font-mono text-xs">{{ t.id_number|default:"—" }}</div>
+        </td>
         <td class="px-6 py-4 text-sm text-zinc-700">{{ t.email|default:"—" }}<div class="text-xs text-zinc-500">{{ t.phone|default:"" }}</div></td>
         <td class="px-6 py-4 text-sm text-zinc-700">{{ t.specialization|default:"—" }}</td>
         <td class="px-6 py-4 text-sm text-right tabular-nums text-zinc-700">{{ school.currency }} {{ t.monthly_salary|floatformat:2|intcomma }}</td>
@@ -29,7 +39,7 @@
           <a href="/api/teachers/{{ t.id }}/delete/" data-testid="delete-teacher-{{ t.id }}" class="ml-3 text-red-600 hover:underline">Delete</a>
         </td>
       </tr>
-      {% empty %}<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">No teachers yet.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="8" class="px-6 py-12 text-center text-sm text-zinc-500">No teachers yet.</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>

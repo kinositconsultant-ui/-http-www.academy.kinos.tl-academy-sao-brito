@@ -25,7 +25,7 @@
         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Admission No.</th>
         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Name</th>
         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Class</th>
-        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Parent</th>
+        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Parents</th>
         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
         <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
       </tr>
@@ -40,7 +40,8 @@
         </td>
         <td class="px-6 py-4 text-sm text-zinc-700">{{ s.school_class|default:"—" }}</td>
         <td class="px-6 py-4 text-sm text-zinc-700">
-          {{ s.parent_name|default:"—" }}
+          <div>F: {{ s.father_name|default:"—" }}</div>
+          <div>M: {{ s.mother_name|default:"—" }}</div>
           {% if s.parent_phone %}<div class="text-xs text-zinc-500">{{ s.parent_phone }}</div>{% endif %}
         </td>
         <td class="px-6 py-4">

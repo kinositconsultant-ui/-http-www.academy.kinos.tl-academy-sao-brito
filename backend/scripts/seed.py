@@ -102,17 +102,26 @@ for name, code in subjects_data:
 
 # ---------- Teachers ----------
 teachers_data = [
-    ("T-001", "Ana", "Ferreira", "ana.ferreira@isjb.edu", "+351 91 123 4567", "MA Mathematics", "Mathematics", Decimal("2400")),
-    ("T-002", "João", "Silva", "joao.silva@isjb.edu", "+351 91 234 5678", "PhD Physics", "Physics", Decimal("2800")),
-    ("T-003", "Maria", "Pereira", "maria.pereira@isjb.edu", "+351 91 345 6789", "BA Languages", "Portuguese / English", Decimal("2200")),
-    ("T-004", "Carlos", "Mendes", "carlos.mendes@isjb.edu", "+351 91 456 7890", "MA History", "History", Decimal("2300")),
+    ("T-001", "Ana", "Ferreira", "ana.ferreira@isjb.edu", "+351 91 123 4567", "MA Mathematics", "Mathematics", Decimal("2400"),
+     "Manuel Ferreira", "Lúcia Ferreira", "BSc Mathematics — Univ. of Lisbon (2012)\nPGCE — IE Católica (2014)"),
+    ("T-002", "João", "Silva", "joao.silva@isjb.edu", "+351 91 234 5678", "PhD Physics", "Physics", Decimal("2800"),
+     "António Silva", "Rosa Silva", "PhD Physics — IST (2018)"),
+    ("T-003", "Maria", "Pereira", "maria.pereira@isjb.edu", "+351 91 345 6789", "BA Languages", "Portuguese / English", Decimal("2200"),
+     "Jorge Pereira", "Filipa Pereira", "BA Languages — Univ. Nova (2013)"),
+    ("T-004", "Carlos", "Mendes", "carlos.mendes@isjb.edu", "+351 91 456 7890", "MA History", "History", Decimal("2300"),
+     "Eduardo Mendes", "Patrícia Mendes", "MA History — Univ. Coimbra (2015)"),
 ]
 teachers = []
-for empno, fn, ln, em, ph, q, sp, sal in teachers_data:
+for empno, fn, ln, em, ph, q, sp, sal, father, mother, edu in teachers_data:
     t, c = Teacher.objects.get_or_create(employee_no=empno, defaults={
         "first_name": fn, "last_name": ln, "email": em, "phone": ph,
         "qualification": q, "specialization": sp, "monthly_salary": sal,
         "hire_date": date(2022, 9, 1),
+        "father_name": father, "mother_name": mother,
+        "education_background": edu,
+        "id_type": "bi", "id_number": f"BI{empno.replace('-', '')}",
+        "village": "Belém", "subvillage": "Bairro Alto",
+        "subdistrict": "Santa Maria", "district": "Lisboa",
     })
     teachers.append(t)
     if c:
@@ -120,21 +129,24 @@ for empno, fn, ln, em, ph, q, sp, sal in teachers_data:
 
 # ---------- Students ----------
 students_data = [
-    ("ADM-1001", "Lucas", "Oliveira", "M", date(2010, 5, 12), 0, "Helena Oliveira", "+351 92 111 2222"),
-    ("ADM-1002", "Sofia", "Rodrigues", "F", date(2010, 8, 22), 0, "Pedro Rodrigues", "+351 92 222 3333"),
-    ("ADM-1003", "Miguel", "Costa", "M", date(2010, 1, 4), 1, "Inês Costa", "+351 92 333 4444"),
-    ("ADM-1004", "Beatriz", "Santos", "F", date(2007, 11, 9), 2, "Rui Santos", "+351 92 444 5555"),
-    ("ADM-1005", "Tiago", "Almeida", "M", date(2007, 3, 30), 2, "Mariana Almeida", "+351 92 555 6666"),
-    ("ADM-1006", "Rita", "Carvalho", "F", date(2005, 6, 18), 3, "Pedro Carvalho", "+351 92 666 7777"),
-    ("ADM-1007", "Daniel", "Sousa", "M", date(2005, 9, 27), 3, "Sara Sousa", "+351 92 777 8888"),
+    ("ADM-1001", "Lucas", "Oliveira", "M", date(2010, 5, 12), 0, "Carlos Oliveira", "Helena Oliveira", "+351 92 111 2222"),
+    ("ADM-1002", "Sofia", "Rodrigues", "F", date(2010, 8, 22), 0, "Pedro Rodrigues", "Ana Rodrigues", "+351 92 222 3333"),
+    ("ADM-1003", "Miguel", "Costa", "M", date(2010, 1, 4), 1, "João Costa", "Inês Costa", "+351 92 333 4444"),
+    ("ADM-1004", "Beatriz", "Santos", "F", date(2007, 11, 9), 2, "Rui Santos", "Sofia Santos", "+351 92 444 5555"),
+    ("ADM-1005", "Tiago", "Almeida", "M", date(2007, 3, 30), 2, "Tomás Almeida", "Mariana Almeida", "+351 92 555 6666"),
+    ("ADM-1006", "Rita", "Carvalho", "F", date(2005, 6, 18), 3, "Pedro Carvalho", "Catarina Carvalho", "+351 92 666 7777"),
+    ("ADM-1007", "Daniel", "Sousa", "M", date(2005, 9, 27), 3, "Manuel Sousa", "Sara Sousa", "+351 92 777 8888"),
 ]
 students = []
-for adm, fn, ln, g, dob, cidx, pn, pp in students_data:
+for adm, fn, ln, g, dob, cidx, father, mother, pp in students_data:
     s, _ = Student.objects.get_or_create(admission_no=adm, defaults={
         "first_name": fn, "last_name": ln, "gender": g, "date_of_birth": dob,
-        "school_class": classes[cidx], "parent_name": pn, "parent_phone": pp,
+        "school_class": classes[cidx],
+        "father_name": father, "mother_name": mother, "parent_phone": pp,
         "parent_email": f"{fn.lower()}.parent@example.com",
-        "address": "Lisboa, Portugal",
+        "id_type": "bi", "id_number": f"BI{adm[-4:]}",
+        "village": "Belém", "subvillage": "Bairro Alto",
+        "subdistrict": "Santa Maria", "district": "Lisboa",
     })
     students.append(s)
 
