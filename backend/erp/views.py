@@ -9,6 +9,7 @@ from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from django.http import HttpResponse
 
+from accounts.models import School
 from .models import (
     SchoolClass, Subject, Student, Teacher, Attendance, Grade,
     FeeStructure, FeeInvoice, FeePayment, SalaryPayment, Expense, Income,
@@ -20,6 +21,7 @@ from .forms import (
     ExpenseForm, IncomeForm, DonorForm, DonationForm, EmployeeForm, LeaveRequestForm,
     AcademicYearForm,
 )
+from .report_card import build_report_card
 
 
 # ---------- Helpers ----------
@@ -206,12 +208,54 @@ def student_edit(request, pk):
 def student_detail(request, pk):
     student = get_object_or_404(Student, pk=pk)
     invoices = student.invoices.all()
-    grades = student.grades.select_related("subject")
+    grades = student.grades.select_related("subject", "academic_year")
     attendance = student.attendance.all()[:30]
     return render(request, "erp/student_detail.html", {
         "student": student, "invoices": invoices,
         "grades": grades, "attendance": attendance,
+        "years": AcademicYear.objects.all(),
+        "current_year": AcademicYear.objects.filter(is_current=True).first(),
     })
+
+
+@login_required
+def student_report_card(request, pk):
+    """Download a one-page PDF report card for the student.
+
+    Optional ?year=<academic_year_id> filter. Defaults to current academic year.
+    """
+    student = get_object_or_404(Student, pk=pk)
+    year_id = request.GET.get("year")
+    year = None
+    if year_id:
+        year = AcademicYear.objects.filter(id=year_id).first()
+    if not year:
+        year = AcademicYear.objects.filter(is_current=True).first()
+
+    grades_qs = student.grades.select_related("subject", "academic_year")
+    if year:
+        grades_qs = grades_qs.filter(academic_year=year)
+    grades = list(grades_qs.order_by("subject__name", "semester"))
+
+    att = student.attendance.all()
+    if year:
+        att = att.filter(date__gte=year.start_date, date__lte=year.end_date)
+    att_stats = {
+        "present": att.filter(status="present").count(),
+        "total": att.count(),
+    }
+
+    pdf_bytes = build_report_card(
+        student=student, grades=grades, school=School.get_active(),
+        academic_year=year, attendance_stats=att_stats,
+    )
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    safe_name = student.full_name.replace(" ", "_")
+    year_part = year.name if year else "all-years"
+    response["Content-Disposition"] = (
+        f'attachment; filename="report-card_{safe_name}_{year_part}.pdf"'
+    )
+    return response
 
 @login_required
 def student_delete(request, pk):

@@ -91,6 +91,11 @@
           <td class="px-5 py-3">
             <a href="/api/students/{{ r.student.id }}/" class="font-medium text-zinc-900 hover:text-blue-600">{{ r.student.full_name }}</a>
             <div class="text-xs text-zinc-500 font-mono">{{ r.student.admission_no }}</div>
+            <a href="/api/students/{{ r.student.id }}/report-card/{% if selected_year %}?year={{ selected_year.id }}{% endif %}"
+               data-testid="download-pdf-{{ r.student.id }}"
+               class="inline-flex items-center mt-1 text-[11px] text-blue-600 hover:underline">
+              <i class="ph ph-file-pdf mr-1"></i> Report Card PDF
+            </a>
           </td>
           <td class="px-5 py-3">
             {% if r.status == 'passed' %}
