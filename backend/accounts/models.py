@@ -11,6 +11,7 @@ class Role(models.TextChoices):
     HR = "hr", _("HR Manager")
     STAFF = "staff", _("Staff")
     PARENT = "parent", _("Parent")
+    STUDENT = "student", _("Student")
 
 
 class User(AbstractUser):

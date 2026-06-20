@@ -258,4 +258,21 @@ if not LeaveRequest.objects.exists():
             end_date=today + timedelta(days=14),
             reason="Family vacation")
 
+# ---------- Student portal demo logins ----------
+for adm in ("ADM-1003", "ADM-1005"):
+    st = Student.objects.filter(admission_no=adm).first()
+    if st and not st.student_user_id:
+        username = adm.lower()
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={"first_name": st.first_name, "last_name": st.last_name,
+                      "role": "student"})
+        if created or not user.check_password("student123"):
+            user.set_password("student123")
+            user.role = "student"
+            user.save()
+        st.student_user = user
+        st.save(update_fields=["student_user"])
+        print(f"[seed] Student portal login: {username}/student123 → {st.full_name}")
+
 print("[seed] Done.")

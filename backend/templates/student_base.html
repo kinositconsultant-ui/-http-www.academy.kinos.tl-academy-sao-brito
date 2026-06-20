@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block body %}
+<div class="min-h-screen bg-zinc-50">
+  <header class="bg-zinc-900 text-white">
+    <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-md bg-blue-600 flex items-center justify-center"><i class="ph-bold ph-student text-xl"></i></div>
+        <div>
+          <div class="font-display font-bold">{{ school.name|default:"Academy ERP" }}</div>
+          <div class="text-[10px] uppercase tracking-widest text-white/60">Student Portal</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-sm">
+        <span class="text-white/70">Hi, <span data-testid="student-name">{{ user.display_name }}</span></span>
+        <form action="/api/logout/" method="post" class="inline">
+          {% csrf_token %}
+          <button type="submit" data-testid="student-logout-btn" class="text-white/80 hover:text-white"><i class="ph ph-sign-out mr-1"></i>Sign out</button>
+        </form>
+      </div>
+    </div>
+    <nav class="bg-zinc-800/80 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6 flex items-center gap-1 text-sm overflow-x-auto">
+        {% with rp=request.path %}
+        <a href="/api/student/" data-testid="student-nav-dashboard"
+          class="px-3 py-3 border-b-2 {% if rp == '/api/student/' %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-house mr-1"></i> Overview
+        </a>
+        <a href="/api/student/grades/" data-testid="student-nav-grades"
+          class="px-3 py-3 border-b-2 {% if '/grades/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-chart-line mr-1"></i> Grades
+        </a>
+        <a href="/api/student/subjects/" data-testid="student-nav-subjects"
+          class="px-3 py-3 border-b-2 {% if '/subjects/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-book-open mr-1"></i> Subjects
+        </a>
+        <a href="/api/student/credits/" data-testid="student-nav-credits"
+          class="px-3 py-3 border-b-2 {% if '/credits/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-certificate mr-1"></i> Credits
+        </a>
+        <a href="/api/student/invoices/" data-testid="student-nav-invoices"
+          class="px-3 py-3 border-b-2 {% if '/invoices/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-receipt mr-1"></i> Fees
+        </a>
+        <a href="/api/student/report-card/" data-testid="student-nav-report-card"
+          class="px-3 py-3 border-b-2 border-transparent text-white/70 hover:text-white">
+          <i class="ph ph-file-pdf mr-1"></i> Report Card
+        </a>
+        {% endwith %}
+      </div>
+    </nav>
+  </header>
+  {% block portal_content %}{% endblock %}
+</div>
+{% endblock %}

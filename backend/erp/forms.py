@@ -2,7 +2,7 @@ from django import forms
 from .models import (
     SchoolClass, Subject, Student, Teacher, Attendance, Grade,
     FeeStructure, FeeInvoice, FeePayment, SalaryPayment, Expense, Income,
-    Donor, Donation, Employee, LeaveRequest, AcademicYear,
+    Donor, Donation, Employee, LeaveRequest, AcademicYear, CreditNote,
 )
 
 
@@ -125,3 +125,11 @@ class LeaveRequestForm(forms.ModelForm):
         exclude = ["status", "decided_by", "decided_at"]
         widgets = {"start_date": _DATE, "end_date": _DATE,
                    "reason": forms.Textarea(attrs={"rows": 2})}
+
+
+
+class CreditNoteForm(forms.ModelForm):
+    class Meta:
+        model = CreditNote
+        exclude = ["issued_on", "issued_by"]
+        widgets = {"note": forms.Textarea(attrs={"rows": 2})}

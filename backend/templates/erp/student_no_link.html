@@ -1,0 +1,18 @@
+{% extends "student_base.html" %}
+{% block title %}Account not linked{% endblock %}
+
+{% block portal_content %}
+<main class="max-w-3xl mx-auto px-6 py-20" data-testid="student-no-link">
+  <div class="bg-white rounded-lg border border-amber-200 p-10 text-center">
+    <div class="mx-auto h-14 w-14 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+      <i class="ph ph-warning-circle text-3xl text-amber-600"></i>
+    </div>
+    <h1 class="font-display text-2xl font-bold text-zinc-900">Account not yet linked</h1>
+    <p class="mt-2 text-sm text-zinc-500 max-w-md mx-auto">
+      Your student profile has not been linked to this account by the school administration.
+      Please contact the school office and ask them to link <span class="font-mono">{{ user.username }}</span>
+      to your student record.
+    </p>
+  </div>
+</main>
+{% endblock %}

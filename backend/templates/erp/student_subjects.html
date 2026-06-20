@@ -1,0 +1,69 @@
+{% extends "student_base.html" %}
+{% block title %}My Subjects{% endblock %}
+
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="student-subjects-page">
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Academic Plan</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">My Subjects</h1>
+  <p class="mt-1 text-sm text-zinc-500">{{ student.full_name }} · {{ student.school_class|default:"No class assigned" }}</p>
+
+  <!-- Subjects to repeat -->
+  <div class="mt-8 bg-white rounded-lg border {% if to_repeat %}border-red-200{% else %}border-zinc-200{% endif %} overflow-hidden" data-testid="subjects-to-repeat-card">
+    <div class="px-5 py-4 border-b {% if to_repeat %}bg-red-50 border-red-200{% else %}bg-zinc-50 border-zinc-200{% endif %} flex items-center justify-between">
+      <h3 class="font-display font-semibold {% if to_repeat %}text-red-900{% else %}text-zinc-900{% endif %}">
+        <i class="ph-bold ph-warning-circle mr-1"></i> Subjects to repeat
+      </h3>
+      <span class="text-xs {% if to_repeat %}text-red-700{% else %}text-zinc-500{% endif %}">{{ to_repeat|length }} pending</span>
+    </div>
+    {% if to_repeat %}
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Subject</th>
+        <th class="px-5 py-2 text-left">Code</th>
+        <th class="px-5 py-2 text-left">Last attempt</th>
+        <th class="px-5 py-2 text-right">Last score</th>
+        <th class="px-5 py-2 text-right">Attempts</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for r in to_repeat %}
+        <tr data-testid="to-repeat-{{ r.subject.id }}">
+          <td class="px-5 py-3 font-medium">{{ r.subject.name }}</td>
+          <td class="px-5 py-3 font-mono text-xs text-zinc-600">{{ r.subject.code }}</td>
+          <td class="px-5 py-3 text-zinc-600">{{ r.last_semester }} · {{ r.last_year.name|default:"—" }}</td>
+          <td class="px-5 py-3 text-right tabular-nums text-red-700 font-semibold">{{ r.last_score }}%</td>
+          <td class="px-5 py-3 text-right tabular-nums">{{ r.attempts }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-8 text-center text-zinc-500 text-sm">All clear — no failed subjects pending.</div>
+    {% endif %}
+  </div>
+
+  <!-- All subjects in current class -->
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden" data-testid="class-subjects-card">
+    <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+      <h3 class="font-display font-semibold text-zinc-900">
+        <i class="ph-bold ph-book-open mr-1"></i> Subjects in {{ student.school_class|default:"my class" }}
+      </h3>
+    </div>
+    {% if class_subjects %}
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50/60 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Subject</th>
+        <th class="px-5 py-2 text-left">Code</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for s in class_subjects %}
+        <tr><td class="px-5 py-3 font-medium">{{ s.name }}</td>
+            <td class="px-5 py-3 font-mono text-xs text-zinc-600">{{ s.code }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-8 text-center text-zinc-500 text-sm">No subjects assigned to this class yet.</div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

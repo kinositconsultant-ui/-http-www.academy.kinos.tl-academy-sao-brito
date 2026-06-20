@@ -53,6 +53,34 @@
       </div>
       {% endif %}
     </div>
+
+    {% if user.is_superuser or user.role == "admin" %}
+    <div class="mt-5 pt-4 border-t border-zinc-200">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Student Portal Login</div>
+      {% if student.student_user %}
+        <div class="mt-2 text-sm">
+          <div class="text-zinc-900 font-medium" data-testid="student-login-username">
+            <i class="ph ph-user-check text-emerald-600 mr-1"></i>
+            {{ student.student_user.username }}
+          </div>
+          <div class="text-xs text-zinc-500 mt-1">Login active. The student can sign in at <span class="font-mono">/api/login/</span>.</div>
+        </div>
+      {% else %}
+        <form method="post" action="/api/students/{{ student.id }}/create-login/" class="mt-2 space-y-2" data-testid="create-student-login-form">
+          {% csrf_token %}
+          <div class="text-xs text-zinc-500">Creates a Student-role user with the credentials below. The student can change the password after first login.</div>
+          <input type="text" name="username" value="{{ student.admission_no }}" data-testid="student-login-username-input"
+            class="w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600" placeholder="Username" />
+          <input type="text" name="password" value="{{ student.admission_no }}" data-testid="student-login-password-input"
+            class="w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600" placeholder="Initial password" />
+          <button type="submit" data-testid="create-student-login-btn"
+            class="w-full inline-flex items-center justify-center rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
+            <i class="ph-bold ph-user-plus mr-2"></i> Create student login
+          </button>
+        </form>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 
   <div class="lg:col-span-2 space-y-6">

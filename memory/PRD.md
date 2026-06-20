@@ -36,15 +36,27 @@
 9. Finance Report (YTD income, expense, net, donations, breakdowns by category/source).
 
 ## Implemented (2026-02)
-- Dashboard Chart.js layout fix (2026-02-20): all three canvases wrapped in
-  fixed-height `.relative` containers (220/220/340px) with
-  `maintainAspectRatio: false` — chart bars now render at the correct size
-  instead of expanding off-screen. Stale in-memory templates were the actual
-  blocker; a backend restart cleared the cached compiled templates.
-- Bulk PDF report cards verified end-to-end (2026-02-20):
-  `GET /api/classes/<id>/report-cards.zip[?year=<id>]` returns a valid ZIP
-  containing one `report-card_<name>_<admission>.pdf` per active student.
-  Trigger button is on the Academic Report page.
+- Student self-service portal (2026-02-20):
+  - New `student` role on `User`; Student model now has a `student_user`
+    OneToOne link.
+  - Admin action on Student detail page: "Create student login" mints a
+    `role=student` User (default username/password = admission number) and
+    links it to the student.
+  - Post-login router sends students to `/api/student/`, parents to
+    `/api/parent/`, everyone else to `/api/dashboard/`.
+  - Read-only pages: Overview (KPIs + recent invoices + credit notes),
+    Grades (per semester with PASS/FAIL badges, year picker), Subjects
+    (failed-only "to repeat" list + class subjects), Credits (academic
+    credits + finance credit notes), Fees (invoice ledger), Download own
+    report-card PDF.
+  - New `CreditNote` finance model with admin CRUD at `/api/credit-notes/`
+    — fields: student, amount, reason, optional invoice, status (open /
+    applied / void). When status="applied" + invoice set, the invoice
+    amount is reduced and status refreshed.
+  - Seed mints two demo student logins: `adm-1003` / `student123`
+    (top student) and `adm-1005` / `student123` (has failed subjects).
+- Dashboard Chart.js layout fix (2026-02-20)
+- Bulk PDF report cards verified end-to-end (2026-02-20)
 
 ## Implemented (2026-01)
 - Code-review pass (2026-01-20):

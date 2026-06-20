@@ -1,0 +1,95 @@
+{% extends "student_base.html" %}
+{% load humanize %}
+{% block title %}My Credits{% endblock %}
+
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="student-credits-page">
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Transcript</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">My Credits</h1>
+  <p class="mt-1 text-sm text-zinc-500">{{ student.full_name }} · {{ student.admission_no }}</p>
+
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="bg-white rounded-lg border border-zinc-200 p-6" data-testid="academic-credits-summary">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Academic credits earned</div>
+      <div class="mt-2 text-4xl font-display font-bold tabular-nums text-blue-700">{{ credits_earned }}</div>
+      <div class="text-xs text-zinc-500 mt-1">1 credit per distinct subject passed.</div>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-6" data-testid="finance-credits-summary">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Open finance credit balance</div>
+      <div class="mt-2 text-4xl font-display font-bold tabular-nums text-emerald-700">
+        {{ school.currency }} {{ total_credit_amount|floatformat:2|intcomma }}
+      </div>
+      <div class="text-xs text-zinc-500 mt-1">Credit notes that have not yet been applied to an invoice.</div>
+    </div>
+  </div>
+
+  <!-- Academic credits -->
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50 flex items-center justify-between">
+      <h3 class="font-display font-semibold text-zinc-900"><i class="ph-bold ph-certificate mr-1"></i> Subjects passed (credit-bearing)</h3>
+      <span class="text-xs text-zinc-500">{{ passed_subjects|length }} subject{{ passed_subjects|length|pluralize }}</span>
+    </div>
+    {% if passed_subjects %}
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50/60 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Subject</th>
+        <th class="px-5 py-2 text-left">Code</th>
+        <th class="px-5 py-2 text-center">Credits</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for s in passed_subjects %}
+        <tr data-testid="passed-subject-{{ s.id }}">
+          <td class="px-5 py-3 font-medium">{{ s.name }}</td>
+          <td class="px-5 py-3 font-mono text-xs text-zinc-600">{{ s.code }}</td>
+          <td class="px-5 py-3 text-center font-semibold text-blue-700">1</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-8 text-center text-zinc-500 text-sm">No subjects passed yet.</div>
+    {% endif %}
+  </div>
+
+  <!-- Finance credit notes -->
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden" data-testid="credit-notes-card">
+    <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+      <h3 class="font-display font-semibold text-zinc-900"><i class="ph-bold ph-receipt mr-1"></i> Finance credit notes</h3>
+    </div>
+    {% if credit_notes %}
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50/60 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Date</th>
+        <th class="px-5 py-2 text-left">Reason</th>
+        <th class="px-5 py-2 text-left">Invoice</th>
+        <th class="px-5 py-2 text-center">Status</th>
+        <th class="px-5 py-2 text-right">Amount</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for cn in credit_notes %}
+        <tr data-testid="credit-note-{{ cn.id }}">
+          <td class="px-5 py-3 text-zinc-600">{{ cn.issued_on }}</td>
+          <td class="px-5 py-3 font-medium">{{ cn.reason }}</td>
+          <td class="px-5 py-3 text-zinc-600">{% if cn.invoice %}#{{ cn.invoice.id }} — {{ cn.invoice.title }}{% else %}—{% endif %}</td>
+          <td class="px-5 py-3 text-center">
+            {% if cn.status == "open" %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Open</span>
+            {% elif cn.status == "applied" %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">Applied</span>
+            {% else %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200">Void</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-right tabular-nums font-semibold text-blue-700">
+            {{ school.currency }} {{ cn.amount|floatformat:2|intcomma }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-8 text-center text-zinc-500 text-sm">No credit notes on file.</div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

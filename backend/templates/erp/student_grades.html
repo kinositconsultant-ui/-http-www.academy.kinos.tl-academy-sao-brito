@@ -1,0 +1,83 @@
+{% extends "student_base.html" %}
+{% load humanize %}
+{% block title %}My Grades{% endblock %}
+
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="student-grades-page">
+  <div class="flex items-end justify-between flex-wrap gap-3">
+    <div>
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Academic Record</div>
+      <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">My Grades</h1>
+      <p class="mt-1 text-sm text-zinc-500">{{ student.full_name }} · {{ student.admission_no }}</p>
+    </div>
+    <form method="get" class="flex items-center gap-2">
+      <label class="text-xs uppercase tracking-wider text-zinc-500">Academic year</label>
+      <select name="year" onchange="this.form.submit()" data-testid="student-grades-year-select"
+        class="rounded-md border-0 py-1.5 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600">
+        {% for y in years %}
+          <option value="{{ y.id }}" {% if selected_year.id == y.id %}selected{% endif %}>{{ y.name }}{% if y.is_current %} (current){% endif %}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg border border-zinc-200 p-4">
+      <div class="text-[10px] uppercase tracking-widest text-zinc-500">Average</div>
+      <div class="mt-1 text-2xl font-display font-bold tabular-nums">{{ overall.avg }}%</div>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-4">
+      <div class="text-[10px] uppercase tracking-widest text-zinc-500">Passed</div>
+      <div class="mt-1 text-2xl font-display font-bold tabular-nums text-emerald-700">{{ overall.passed }}</div>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-4">
+      <div class="text-[10px] uppercase tracking-widest text-zinc-500">Failed</div>
+      <div class="mt-1 text-2xl font-display font-bold tabular-nums text-red-700">{{ overall.failed }}</div>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-4">
+      <div class="text-[10px] uppercase tracking-widest text-zinc-500">Entries</div>
+      <div class="mt-1 text-2xl font-display font-bold tabular-nums">{{ overall.total }}</div>
+    </div>
+  </div>
+
+  {% for sem_label, grades in by_sem.items %}
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden" data-testid="student-sem-{{ forloop.counter }}">
+    <div class="px-5 py-3 border-b border-zinc-200 bg-zinc-50">
+      <h3 class="font-display font-semibold text-zinc-900">{{ sem_label }}</h3>
+    </div>
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50/60 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Subject</th>
+        <th class="px-5 py-2 text-left">Exam</th>
+        <th class="px-5 py-2 text-right">Score</th>
+        <th class="px-5 py-2 text-right">%</th>
+        <th class="px-5 py-2 text-center">Grade</th>
+        <th class="px-5 py-2 text-center">Status</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for g in grades %}
+        <tr>
+          <td class="px-5 py-3 font-medium">{{ g.subject.name }}</td>
+          <td class="px-5 py-3 text-zinc-600">{{ g.exam_name }}</td>
+          <td class="px-5 py-3 text-right tabular-nums">{{ g.score }} / {{ g.total }}</td>
+          <td class="px-5 py-3 text-right tabular-nums {% if g.is_pass %}text-emerald-700{% else %}text-red-700{% endif %}">{{ g.percentage }}%</td>
+          <td class="px-5 py-3 text-center font-bold">{{ g.letter }}</td>
+          <td class="px-5 py-3 text-center">
+            {% if g.is_pass %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">PASS</span>
+            {% else %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">FAIL</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% empty %}
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 p-12 text-center text-zinc-500">
+    No grades recorded for {{ selected_year.name|default:"this year" }}.
+  </div>
+  {% endfor %}
+</main>
+{% endblock %}

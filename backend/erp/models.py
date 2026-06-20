@@ -89,6 +89,14 @@ class Student(models.Model):
         help_text="Parent accounts that can view this student in the parent portal.",
     )
 
+    # Student self-service portal (links student → User with role=student)
+    student_user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="student_profile",
+        limit_choices_to={"role": "student"},
+        help_text="Student account used to log in to the student portal.",
+    )
+
     class Meta:
         ordering = ["-id"]
 
@@ -503,5 +511,34 @@ class SentEmail(models.Model):
 
     class Meta:
         ordering = ["-sent_at"]
+
+
+class CreditNote(models.Model):
+    """Finance credit note issued to a student.
+
+    Examples: scholarship deduction, refund for overpaid fees, goodwill credit.
+    Can optionally be applied against a specific invoice (reducing its balance);
+    otherwise the student carries the credit and the admin can later apply it.
+    """
+    STATUS = [("open", "Open"), ("applied", "Applied"), ("void", "Void")]
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="credit_notes")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reason = models.CharField(max_length=200)
+    invoice = models.ForeignKey(
+        FeeInvoice, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="credit_notes",
+        help_text="Optional invoice this credit was applied against.")
+    issued_on = models.DateField(auto_now_add=True)
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS, default="open")
+    note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-issued_on", "-id"]
+
+    def __str__(self):
+        return f"CN-{self.id} {self.student.full_name} {self.amount}"
 
 

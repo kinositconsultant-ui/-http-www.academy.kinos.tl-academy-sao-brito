@@ -11,9 +11,13 @@ def admin_required(view_func):
 
 @login_required
 def post_login_redirect(request):
-    """Send parents to /api/parent/, everyone else to /api/dashboard/."""
-    if request.user.is_authenticated and request.user.role == "parent" and not request.user.is_superuser:
-        return redirect("/api/parent/")
+    """Route users to the portal that matches their role."""
+    u = request.user
+    if u.is_authenticated and not u.is_superuser:
+        if u.role == "parent":
+            return redirect("/api/parent/")
+        if u.role == "student":
+            return redirect("/api/student/")
     return redirect("/api/dashboard/")
 
 

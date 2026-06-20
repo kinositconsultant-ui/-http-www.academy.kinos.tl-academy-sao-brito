@@ -2,6 +2,7 @@ from django.urls import path
 from django.views.generic import RedirectView
 from . import views
 from . import portal_views
+from . import student_views
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/api/dashboard/", permanent=False)),
@@ -10,6 +11,22 @@ urlpatterns = [
     # Parent portal
     path("parent/", portal_views.parent_dashboard, name="parent_dashboard"),
     path("parent/student/<int:pk>/", portal_views.parent_student_detail, name="parent_student_detail"),
+
+    # Student portal
+    path("student/", student_views.student_dashboard, name="student_dashboard"),
+    path("student/grades/", student_views.student_grades, name="student_grades"),
+    path("student/subjects/", student_views.student_subjects, name="student_subjects"),
+    path("student/credits/", student_views.student_credits, name="student_credits"),
+    path("student/invoices/", student_views.student_invoices, name="student_invoices"),
+    path("student/report-card/", student_views.student_report_card, name="student_report_card_self"),
+
+    # Admin action: create student login
+    path("students/<int:pk>/create-login/", student_views.create_student_login, name="student_create_login"),
+
+    # Credit notes (admin/accountant)
+    path("credit-notes/", student_views.credit_note_list, name="credit_note_list"),
+    path("credit-notes/add/", student_views.credit_note_create, name="credit_note_create"),
+    path("credit-notes/<int:pk>/delete/", student_views.credit_note_delete, name="credit_note_delete"),
 
     # Bulk PDF report cards
     path("classes/<int:class_id>/report-cards.zip", portal_views.class_report_cards_zip, name="class_report_cards_zip"),

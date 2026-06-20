@@ -1,0 +1,48 @@
+{% extends "student_base.html" %}
+{% load humanize %}
+{% block title %}My Fees{% endblock %}
+
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="student-invoices-page">
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Fees</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">My Invoices</h1>
+  <p class="mt-1 text-sm text-zinc-500">Read-only view. Your parent / guardian handles payments from the parent portal.</p>
+
+  <div class="mt-6 bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Title</th>
+        <th class="px-5 py-2 text-left">Issued</th>
+        <th class="px-5 py-2 text-left">Due</th>
+        <th class="px-5 py-2 text-right">Amount</th>
+        <th class="px-5 py-2 text-right">Paid</th>
+        <th class="px-5 py-2 text-right">Balance</th>
+        <th class="px-5 py-2 text-center">Status</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for inv in invoices %}
+        <tr data-testid="invoice-row-{{ inv.id }}">
+          <td class="px-5 py-3 font-medium">{{ inv.title }}</td>
+          <td class="px-5 py-3 text-zinc-600">{{ inv.issued_date }}</td>
+          <td class="px-5 py-3 text-zinc-600">{{ inv.due_date }}</td>
+          <td class="px-5 py-3 text-right tabular-nums">{{ school.currency }} {{ inv.amount|floatformat:2|intcomma }}</td>
+          <td class="px-5 py-3 text-right tabular-nums text-emerald-700">{{ school.currency }} {{ inv.amount_paid|floatformat:2|intcomma }}</td>
+          <td class="px-5 py-3 text-right tabular-nums font-semibold">{{ school.currency }} {{ inv.balance|floatformat:2|intcomma }}</td>
+          <td class="px-5 py-3 text-center">
+            {% if inv.status == "paid" %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Paid</span>
+            {% elif inv.status == "partial" %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">Partial</span>
+            {% elif inv.status == "overdue" %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">Overdue</span>
+            {% else %}
+              <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">Pending</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="7" class="px-5 py-8 text-center text-zinc-500">No invoices on file.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}

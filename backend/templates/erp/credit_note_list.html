@@ -1,0 +1,47 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Credit Notes{% endblock %}
+{% block page_title %}Credit Notes{% endblock %}
+{% block topbar_actions %}
+<a href="/api/credit-notes/add/" data-testid="add-credit-note-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+  <i class="ph-bold ph-plus mr-2"></i> Add Credit Note
+</a>
+{% endblock %}
+{% block content %}
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="credit-notes-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Date</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Student</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Reason</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Invoice</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Amount</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for c in notes %}
+      <tr data-testid="credit-note-row-{{ c.id }}">
+        <td class="px-6 py-4 text-sm">{{ c.issued_on }}</td>
+        <td class="px-6 py-4 text-sm font-medium"><a href="/api/students/{{ c.student.id }}/" class="hover:text-blue-600">{{ c.student.full_name }}</a></td>
+        <td class="px-6 py-4 text-sm">{{ c.reason }}</td>
+        <td class="px-6 py-4 text-sm">{% if c.invoice %}<a href="/api/invoices/{{ c.invoice.id }}/" class="text-blue-600 hover:underline">#{{ c.invoice.id }}</a>{% else %}—{% endif %}</td>
+        <td class="px-6 py-4 text-sm">
+          {% if c.status == "open" %}
+            <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Open</span>
+          {% elif c.status == "applied" %}
+            <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">Applied</span>
+          {% else %}
+            <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200">Void</span>
+          {% endif %}
+        </td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums text-blue-700">{{ c.amount|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4 text-right text-sm">
+          <a href="/api/credit-notes/{{ c.id }}/delete/" class="text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="px-6 py-12 text-center text-sm text-zinc-500">No credit notes yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
