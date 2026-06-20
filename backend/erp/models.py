@@ -486,3 +486,22 @@ class PaymentTransaction(models.Model):
     def __str__(self):
         return f"TX {self.session_id[:12]}… {self.status}"
 
+
+class SentEmail(models.Model):
+    """Audit log of every receipt / notification email (mock or live)."""
+    to_email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    html = models.TextField()
+    mode = models.CharField(max_length=10, choices=[("mock", "Mock"), ("live", "Live")], default="mock")
+    success = models.BooleanField(default=True)
+    error = models.CharField(max_length=300, blank=True)
+    invoice = models.ForeignKey(
+        FeeInvoice, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="sent_emails",
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-sent_at"]
+
+

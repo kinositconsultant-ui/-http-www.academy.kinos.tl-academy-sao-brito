@@ -53,6 +53,15 @@
                 <i class="ph-bold ph-credit-card mr-1"></i> Pay Online
               </button>
             </form>
+            {% if stripe_crypto_enabled %}
+            <form action="/api/invoices/{{ inv.id }}/pay-crypto/" method="post" class="inline ml-1">
+              {% csrf_token %}
+              <button type="submit" data-testid="pay-crypto-{{ inv.id }}"
+                class="inline-flex items-center rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800">
+                <i class="ph-bold ph-currency-circle-dollar mr-1"></i> Crypto
+              </button>
+            </form>
+            {% endif %}
             {% endif %}
           </td>
         </tr>

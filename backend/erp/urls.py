@@ -16,6 +16,7 @@ urlpatterns = [
 
     # Stripe online payments
     path("invoices/<int:pk>/pay-online/", portal_views.invoice_pay_online, name="invoice_pay_online"),
+    path("invoices/<int:pk>/pay-crypto/", portal_views.invoice_pay_crypto, name="invoice_pay_crypto"),
     path("invoices/<int:pk>/payment-status/", portal_views.invoice_payment_status, name="invoice_payment_status"),
     path("webhook/stripe", portal_views.stripe_webhook, name="stripe_webhook"),
 
@@ -122,4 +123,5 @@ urlpatterns = [
     # Reports
     path("reports/finance/", views.finance_report, name="finance_report"),
     path("reports/academic/", views.academic_report, name="academic_report"),
+    path("emails/", views.sent_emails_log, name="sent_emails_log"),
 ]

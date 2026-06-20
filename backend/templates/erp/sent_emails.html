@@ -1,0 +1,40 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Email Log{% endblock %}
+{% block crumb %}Settings{% endblock %}
+{% block page_title %}Email Log — Receipts & Notifications{% endblock %}
+
+{% block content %}
+<div class="mb-6 rounded-md border {% if live_mode %}bg-emerald-50 border-emerald-200 text-emerald-800{% else %}bg-amber-50 border-amber-200 text-amber-800{% endif %} px-4 py-3 text-sm" data-testid="sendgrid-mode-banner">
+  {% if live_mode %}
+    <b>SendGrid LIVE mode</b> — real emails are being sent via SendGrid.
+  {% else %}
+    <b>SendGrid MOCK mode</b> — emails are <u>not</u> actually delivered. Set <code class="font-mono bg-white/50 px-1 rounded">SENDGRID_API_KEY</code> and <code class="font-mono bg-white/50 px-1 rounded">SENDGRID_FROM_EMAIL</code> in <code>/app/backend/.env</code> and restart the backend to enable live sending. All receipts are still logged below for verification.
+  {% endif %}
+</div>
+
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="sent-emails-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Sent</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">To</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Subject</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Invoice</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Mode</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for r in rows %}
+      <tr data-testid="email-row-{{ r.id }}">
+        <td class="px-6 py-3 text-sm text-zinc-700">{{ r.sent_at|naturaltime }}</td>
+        <td class="px-6 py-3 text-sm font-mono text-zinc-700">{{ r.to_email }}</td>
+        <td class="px-6 py-3 text-sm">{{ r.subject }}</td>
+        <td class="px-6 py-3 text-sm">{% if r.invoice %}<a href="/api/invoices/{{ r.invoice.id }}/" class="text-blue-600 hover:underline">#{{ r.invoice.id }}</a>{% else %}—{% endif %}</td>
+        <td class="px-6 py-3"><span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium {% if r.mode == 'live' %}bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200{% else %}bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200{% endif %}">{{ r.get_mode_display|upper }}</span></td>
+        <td class="px-6 py-3">{% if r.success %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Sent</span>{% else %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200" title="{{ r.error }}">Failed</span>{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">No emails sent yet. Record a payment to trigger the first receipt.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

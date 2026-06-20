@@ -174,6 +174,71 @@ async def invoice_pay_online(request, pk):
     return HttpResponseRedirect(session.url)
 
 
+async def invoice_pay_crypto(request, pk):
+    """Create a Stripe Checkout session for crypto payment.
+
+    Note: Stripe Checkout displays crypto as a payment method when it's enabled
+    in your Stripe Dashboard (Settings → Payment methods → Crypto). When using
+    the emergentintegrations proxy, the merchant's underlying Stripe account
+    controls whether crypto appears on the hosted checkout. The button below
+    creates the same Checkout session and tags it `method=crypto` for audit.
+    """
+    user = await request.auser()
+    if not user.is_authenticated:
+        return HttpResponseRedirect("/api/login/")
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    if not settings.STRIPE_ENABLE_CRYPTO:
+        return HttpResponseRedirect(f"/api/invoices/{pk}/")
+
+    invoice = await sync_to_async(get_object_or_404)(FeeInvoice, pk=pk)
+    if invoice.status == "paid" or invoice.balance <= 0:
+        return HttpResponseRedirect(f"/api/invoices/{invoice.pk}/")
+
+    amount = float(invoice.balance)
+    student = await sync_to_async(lambda: invoice.student)()
+
+    host_url = f"{request.scheme}://{request.get_host()}"
+    success_url = f"{host_url}/api/invoices/{invoice.pk}/?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{host_url}/api/invoices/{invoice.pk}/"
+
+    from emergentintegrations.payments.stripe.checkout import (
+        StripeCheckout, CheckoutSessionRequest,
+    )
+    checkout = StripeCheckout(
+        api_key=settings.STRIPE_API_KEY,
+        webhook_url=f"{host_url}/api/webhook/stripe",
+    )
+    req = CheckoutSessionRequest(
+        amount=amount, currency="usd",
+        success_url=success_url, cancel_url=cancel_url,
+        metadata={
+            "invoice_id": str(invoice.pk),
+            "student_admission": student.admission_no,
+            "user_id": str(user.id),
+            "source": "academy_erp_invoice_crypto",
+            "method": "crypto",
+        },
+    )
+
+    try:
+        session = await checkout.create_checkout_session(req)
+    except Exception as exc:  # noqa: BLE001
+        import traceback
+        traceback.print_exc()
+        await sync_to_async(messages.error)(
+            request, f"Could not start crypto checkout: {exc}")
+        return HttpResponseRedirect(f"/api/invoices/{invoice.pk}/")
+
+    await sync_to_async(PaymentTransaction.objects.create)(
+        invoice=invoice, session_id=session.session_id,
+        amount=amount, currency="usd", status="initiated",
+        metadata=dict(req.metadata or {}),
+        initiated_by=user,
+    )
+    return HttpResponseRedirect(session.url)
+
+
 async def invoice_payment_status(request, pk):
     """Polling endpoint used by JS after returning from Stripe."""
     user = await request.auser()
@@ -242,6 +307,19 @@ def _settle_invoice(invoice, tx):
         source="fees", amount=payment.amount, date=payment.paid_on,
         note=f"Invoice #{invoice.id} (Stripe session {tx.session_id[:14]}…)",
     )
+    # Email receipt
+    try:
+        from .mail import send_email, render_payment_receipt
+        to = invoice.student.parent_email
+        if to:
+            send_email(
+                to_email=to,
+                subject=f"Payment receipt - Invoice #{invoice.id}",
+                html=render_payment_receipt(invoice, payment, School.get_active()),
+                related_invoice=invoice,
+            )
+    except Exception as exc:  # noqa: BLE001
+        print(f"[receipt] failed to dispatch: {exc}")
 
 
 @csrf_exempt

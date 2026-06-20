@@ -113,6 +113,9 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 
 # Stripe (via emergentintegrations)
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
+# When True, an additional "Pay with Crypto" button appears that creates a
+# Stripe Checkout session with payment_method_types=['card', 'crypto'].
+STRIPE_ENABLE_CRYPTO = os.environ.get("STRIPE_ENABLE_CRYPTO", "false").lower() == "true"
 
 SESSION_COOKIE_NAME = "academy_erp_sessionid"
 CSRF_COOKIE_NAME = "academy_erp_csrftoken"

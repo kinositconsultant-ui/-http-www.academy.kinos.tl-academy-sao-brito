@@ -56,6 +56,8 @@
         {% include "_nav_item.html" with url="/api/school/" label="School Profile" icon="ph-buildings" tid="nav-school-profile" %}
         {% if user.is_superuser or user.role == "admin" %}
           {% include "_nav_item.html" with url="/api/users/" label="System Users" icon="ph-user-gear" tid="nav-users" %}
+          {% include "_nav_item.html" with url="/api/parent-links/" label="Parent Links" icon="ph-link" tid="nav-parent-links" %}
+          {% include "_nav_item.html" with url="/api/emails/" label="Email Log" icon="ph-envelope-simple" tid="nav-emails" %}
         {% endif %}
         {% include "_nav_item.html" with url="/api/admin/" label="Django Admin" icon="ph-shield-check" tid="nav-admin" %}
       </div>

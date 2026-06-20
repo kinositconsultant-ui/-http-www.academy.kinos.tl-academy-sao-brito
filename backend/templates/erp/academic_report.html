@@ -153,6 +153,37 @@
   </div>
 </div>
 
+<!-- Per-Class Leaderboard -->
+{% if class_leaderboard %}
+<div class="bg-white rounded-lg border border-zinc-200 overflow-hidden mb-8" data-testid="class-leaderboard">
+  <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+    <div>
+      <h3 class="font-display font-semibold">Top Scorers — {{ selected_class }}{% if semester %} · {{ semester|upper }}{% endif %}{% if selected_year %} · {{ selected_year.name }}{% endif %}</h3>
+      <p class="text-xs text-zinc-500 mt-0.5">Ranked by overall percentage for the current filters.</p>
+    </div>
+    <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200"><i class="ph-bold ph-trophy mr-1"></i> Class Leaderboard</span>
+  </div>
+  <table class="min-w-full text-sm">
+    <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+      <th class="px-5 py-2 text-left">Rank</th>
+      <th class="px-5 py-2 text-left">Student</th>
+      <th class="px-5 py-2 text-right">Average %</th>
+      <th class="px-5 py-2 text-right">Subjects Graded</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for r in class_leaderboard %}
+      <tr data-testid="class-leader-row-{{ forloop.counter }}">
+        <td class="px-5 py-3 font-bold text-zinc-500">{% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}#{{ forloop.counter }}{% endif %}</td>
+        <td class="px-5 py-3"><div class="font-medium text-zinc-900">{{ r.student_name }}</div><div class="text-xs text-zinc-500 font-mono">{{ r.admission_no }}</div></td>
+        <td class="px-5 py-3 text-right tabular-nums font-semibold text-blue-700">{{ r.avg_pct }}%</td>
+        <td class="px-5 py-3 text-right tabular-nums">{{ r.n_grades }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
 <!-- Yearly pass/fail roll-up -->
 <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
   <div class="px-5 py-4 border-b border-zinc-200">

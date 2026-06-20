@@ -145,12 +145,18 @@ def _top_by_year():
     return out
 
 
-def _good_students_leaderboard(limit=10):
-    """Top N students by overall percentage across all their grades."""
-    rows = (Grade.objects.values("student_id", "student__first_name",
-                                 "student__last_name", "student__admission_no",
-                                 "student__school_class__name",
-                                 "student__school_class__section")
+def _good_students_leaderboard(limit=10, year=None):
+    """Top N students by overall percentage across all their grades.
+
+    If `year` is provided, the leaderboard is restricted to that academic year.
+    """
+    qs = Grade.objects.all()
+    if year:
+        qs = qs.filter(academic_year=year)
+    rows = (qs.values("student_id", "student__first_name",
+                      "student__last_name", "student__admission_no",
+                      "student__school_class__name",
+                      "student__school_class__section")
             .annotate(total_score=Sum("score"), total_max=Sum("total"),
                       n_grades=Count("id"))
             .order_by("-total_score"))
@@ -177,14 +183,24 @@ def _good_students_leaderboard(limit=10):
 @login_required
 def dashboard(request):
     month_start = timezone.now().date().replace(day=1)
-    current_year = AcademicYear.objects.filter(is_current=True).first() or AcademicYear.objects.first()
+    all_years = AcademicYear.objects.all().order_by("-start_date")
+    current_year = AcademicYear.objects.filter(is_current=True).first() or all_years.first()
+
+    selected_year_id = request.GET.get("chart_year")
+    if selected_year_id:
+        selected_year = all_years.filter(id=selected_year_id).first() or current_year
+    else:
+        selected_year = current_year
+
     kpis = {**_count_kpis(), **_money_kpis(month_start)}
     ctx = {
         "kpis": kpis,
         "current_year": current_year,
-        "top_by_semester": _top_by_semester(current_year),
+        "selected_year": selected_year,
+        "all_years": all_years,
+        "top_by_semester": _top_by_semester(selected_year),
         "top_by_year": _top_by_year(),
-        "good_students": _good_students_leaderboard(limit=10),
+        "good_students": _good_students_leaderboard(limit=10, year=selected_year),
         **_recent_activity(),
     }
     return render(request, "erp/dashboard.html", ctx)
@@ -522,6 +538,20 @@ def invoice_detail(request, pk):
                 source="fees", amount=payment.amount, date=payment.paid_on,
                 note=f"Invoice #{invoice.id}: {invoice.title}",
             )
+            # Email receipt
+            try:
+                from .mail import send_email, render_payment_receipt
+                from accounts.models import School as _School
+                to = invoice.student.parent_email
+                if to:
+                    send_email(
+                        to_email=to,
+                        subject=f"Payment receipt - Invoice #{invoice.id}",
+                        html=render_payment_receipt(invoice, payment, _School.get_active()),
+                        related_invoice=invoice,
+                    )
+            except Exception as exc:  # noqa: BLE001
+                print(f"[receipt] failed to dispatch: {exc}")
             messages.success(request, "Payment recorded.")
             return redirect("invoice_detail", pk=invoice.pk)
         else:
@@ -654,6 +684,18 @@ def income_delete(request, pk):
 def donor_list(request):
     qs = Donor.objects.prefetch_related("donations").all()
     return render(request, "erp/donor_list.html", {"objects": qs})
+
+
+@login_required
+def sent_emails_log(request):
+    from .models import SentEmail
+    import os as _os
+    rows = SentEmail.objects.select_related("invoice__student").all()[:100]
+    return render(request, "erp/sent_emails.html", {
+        "rows": rows,
+        "live_mode": bool(_os.environ.get("SENDGRID_API_KEY")) and bool(_os.environ.get("SENDGRID_FROM_EMAIL")),
+    })
+
 
 @login_required
 def donor_create(request):
@@ -898,6 +940,31 @@ def academic_report(request):
         by_year.append({"year": y, "passed": passed, "failed": failed,
                         "total": passed + failed})
 
+    # Per-class leaderboard for the selected class/year/semester
+    class_leaderboard = []
+    if selected_class:
+        leader_qs = Grade.objects.filter(student__in=selected_class.students.filter(is_active=True))
+        if selected_year:
+            leader_qs = leader_qs.filter(academic_year=selected_year)
+        if semester:
+            leader_qs = leader_qs.filter(semester=semester)
+        agg = (leader_qs.values("student_id", "student__first_name",
+                                "student__last_name", "student__admission_no")
+               .annotate(total_score=Sum("score"), total_max=Sum("total"),
+                         n_grades=Count("id")))
+        for r in agg:
+            tm = r["total_max"] or 0
+            if tm <= 0:
+                continue
+            pct = round(float(r["total_score"]) / float(tm) * 100, 2)
+            class_leaderboard.append({
+                "student_name": f"{r['student__first_name']} {r['student__last_name']}",
+                "admission_no": r["student__admission_no"],
+                "avg_pct": pct,
+                "n_grades": r["n_grades"],
+            })
+        class_leaderboard.sort(key=lambda x: x["avg_pct"], reverse=True)
+
     return render(request, "erp/academic_report.html", {
         "classes": classes,
         "years": years,
@@ -908,4 +975,5 @@ def academic_report(request):
         "rows": rows,
         "summary": summary,
         "by_year": by_year,
+        "class_leaderboard": class_leaderboard,
     })
