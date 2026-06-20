@@ -110,11 +110,23 @@ class Attendance(models.Model):
 
 
 class Grade(models.Model):
+    SEMESTER_CHOICES = [
+        ("s1", "Semester 1"),
+        ("s2", "Semester 2"),
+        ("mid", "Midterm"),
+        ("final", "Final"),
+    ]
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="grades")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="grades")
+    academic_year = models.ForeignKey(
+        AcademicYear, on_delete=models.SET_NULL, null=True, blank=True, related_name="grades",
+    )
+    semester = models.CharField(max_length=10, choices=SEMESTER_CHOICES, default="s1")
     exam_name = models.CharField(max_length=80)  # Midterm, Final, etc.
     score = models.DecimalField(max_digits=6, decimal_places=2)
     total = models.DecimalField(max_digits=6, decimal_places=2, default=100)
+    passing_pct = models.DecimalField(max_digits=5, decimal_places=2, default=50,
+                                      help_text="Minimum percentage required to pass")
     recorded_at = models.DateField(auto_now_add=True)
 
     @property
@@ -123,6 +135,10 @@ class Grade(models.Model):
             return round((float(self.score) / float(self.total)) * 100, 2)
         except (ZeroDivisionError, TypeError):
             return 0
+
+    @property
+    def is_pass(self):
+        return self.percentage >= float(self.passing_pct or 50)
 
     @property
     def letter(self):

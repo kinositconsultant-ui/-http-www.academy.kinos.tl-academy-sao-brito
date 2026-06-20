@@ -282,8 +282,21 @@ def attendance_delete(request, pk):
 
 @login_required
 def grade_list(request):
-    qs = Grade.objects.select_related("student", "subject").order_by("-recorded_at")[:200]
-    return render(request, "erp/grade_list.html", {"objects": qs})
+    semester = request.GET.get("semester", "")
+    year_id = request.GET.get("year", "")
+    qs = Grade.objects.select_related("student", "subject", "academic_year")
+    if semester:
+        qs = qs.filter(semester=semester)
+    if year_id:
+        qs = qs.filter(academic_year_id=year_id)
+    qs = qs.order_by("-recorded_at")[:200]
+    return render(request, "erp/grade_list.html", {
+        "objects": qs,
+        "semester": semester,
+        "year_id": year_id,
+        "semesters": Grade.SEMESTER_CHOICES,
+        "years": AcademicYear.objects.all(),
+    })
 
 @login_required
 def grade_create(request):
@@ -661,4 +674,105 @@ def finance_report(request):
         "net": (income_total or 0) - (expense_total or 0),
         "by_category": by_category,
         "by_source": by_source,
+    })
+
+
+
+# ---------- Academic Report ----------
+
+@login_required
+def academic_report(request):
+    """Per-class academic report: students pass/fail status, remaining subjects.
+
+    Filters: class_id, academic_year_id, semester. Defaults to first class
+    + current academic year + Semester 1.
+    """
+    classes = SchoolClass.objects.all()
+    years = AcademicYear.objects.all()
+    current_year = AcademicYear.objects.filter(is_current=True).first() or years.first()
+
+    # Default to the first class that actually has students, otherwise the first class.
+    default_class = (classes.annotate(_n=Count("students")).filter(_n__gt=0)
+                     .order_by("name", "section").first()
+                     or classes.first())
+    class_id = request.GET.get("class_id") or (str(default_class.id) if default_class else "")
+    year_id = request.GET.get("year_id") or (str(current_year.id) if current_year else "")
+    semester = request.GET.get("semester", "s1")
+
+    selected_class = classes.filter(id=class_id).first() if class_id else None
+    selected_year = years.filter(id=year_id).first() if year_id else None
+
+    rows = []
+    summary = {"passed": 0, "failed": 0, "incomplete": 0, "students": 0}
+
+    if selected_class:
+        class_subjects = list(selected_class.subjects.all())
+        # Fallback: if the class has no subjects assigned, include all subjects
+        if not class_subjects:
+            class_subjects = list(Subject.objects.all())
+        students = selected_class.students.filter(is_active=True)
+        for student in students:
+            grades_qs = student.grades.select_related("subject")
+            if selected_year:
+                grades_qs = grades_qs.filter(academic_year=selected_year)
+            if semester:
+                grades_qs = grades_qs.filter(semester=semester)
+            grades_by_subject = {g.subject_id: g for g in grades_qs}
+            graded_subjects = []
+            remaining_subjects = []
+            failed_subjects = []
+            total_pct = 0
+            for subj in class_subjects:
+                g = grades_by_subject.get(subj.id)
+                if g:
+                    graded_subjects.append((subj, g))
+                    total_pct += g.percentage
+                    if not g.is_pass:
+                        failed_subjects.append(subj)
+                else:
+                    remaining_subjects.append(subj)
+            if remaining_subjects:
+                status = "incomplete"
+            elif failed_subjects:
+                status = "failed"
+            else:
+                status = "passed"
+            summary[status] += 1
+            summary["students"] += 1
+            avg_pct = round(total_pct / len(graded_subjects), 2) if graded_subjects else 0
+            rows.append({
+                "student": student,
+                "status": status,
+                "graded": graded_subjects,
+                "remaining": remaining_subjects,
+                "failed": failed_subjects,
+                "avg_pct": avg_pct,
+            })
+
+    # Per-year roll-up: count of students that passed / failed each academic year
+    by_year = []
+    for y in years:
+        year_rows = (Grade.objects.filter(academic_year=y)
+                     .select_related("student"))
+        student_status = {}
+        for g in year_rows:
+            prev = student_status.get(g.student_id)
+            if prev == "failed":
+                continue
+            student_status[g.student_id] = "failed" if not g.is_pass else (prev or "passed")
+        passed = sum(1 for v in student_status.values() if v == "passed")
+        failed = sum(1 for v in student_status.values() if v == "failed")
+        by_year.append({"year": y, "passed": passed, "failed": failed,
+                        "total": passed + failed})
+
+    return render(request, "erp/academic_report.html", {
+        "classes": classes,
+        "years": years,
+        "selected_class": selected_class,
+        "selected_year": selected_year,
+        "semester": semester,
+        "semesters": Grade.SEMESTER_CHOICES,
+        "rows": rows,
+        "summary": summary,
+        "by_year": by_year,
     })

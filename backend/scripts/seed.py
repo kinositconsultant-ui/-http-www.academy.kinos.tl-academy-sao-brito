@@ -60,7 +60,7 @@ if not School.objects.exists():
         website="https://isjb.edu",
         motto="Scientia · Caritas · Veritas",
         founded_date=date(1948, 9, 15),
-        currency="EUR",
+        currency="USD",
     )
     print("[seed] School profile: Instituto São João de Brito")
 else:
@@ -74,7 +74,7 @@ else:
         s.email = s.email or "contact@isjb.edu"
         s.website = s.website or "https://isjb.edu"
         s.motto = s.motto or "Scientia · Caritas · Veritas"
-        s.currency = "EUR"
+        s.currency = "USD"
         s.save()
         print("[seed] School profile updated to Instituto São João de Brito")
 

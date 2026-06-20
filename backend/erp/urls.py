@@ -107,4 +107,5 @@ urlpatterns = [
 
     # Reports
     path("reports/finance/", views.finance_report, name="finance_report"),
+    path("reports/academic/", views.academic_report, name="academic_report"),
 ]

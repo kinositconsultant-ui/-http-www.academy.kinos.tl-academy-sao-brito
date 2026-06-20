@@ -53,6 +53,7 @@ class GradeForm(forms.ModelForm):
     class Meta:
         model = Grade
         exclude = ["recorded_at"]
+        widgets = {"exam_name": forms.TextInput(attrs={"placeholder": "e.g. Midterm Math Test"})}
 
 
 class FeeStructureForm(forms.ModelForm):

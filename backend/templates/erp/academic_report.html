@@ -1,0 +1,168 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+
+{% block title %}Academic Report{% endblock %}
+{% block crumb %}Reports{% endblock %}
+{% block page_title %}Academic Report — Pass / Fail & Remaining Subjects{% endblock %}
+
+{% block content %}
+<!-- Filter bar -->
+<form method="get" class="bg-white rounded-lg border border-zinc-200 p-5 mb-6" data-testid="academic-filter-form">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Class</label>
+      <select name="class_id" data-testid="filter-class"
+        class="block w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600">
+        {% for c in classes %}
+          <option value="{{ c.id }}" {% if selected_class.id == c.id %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Academic Year</label>
+      <select name="year_id" data-testid="filter-year"
+        class="block w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600">
+        <option value="">All years</option>
+        {% for y in years %}
+          <option value="{{ y.id }}" {% if selected_year.id == y.id %}selected{% endif %}>{{ y.name }}{% if y.is_current %} (current){% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Semester</label>
+      <select name="semester" data-testid="filter-semester"
+        class="block w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600">
+        <option value="">All semesters</option>
+        {% for code, label in semesters %}
+          <option value="{{ code }}" {% if semester == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="flex items-end">
+      <button type="submit" data-testid="apply-filters-btn"
+        class="w-full inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+        <i class="ph-bold ph-funnel mr-2"></i> Apply Filters
+      </button>
+    </div>
+  </div>
+</form>
+
+<!-- Class summary -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
+  <div class="bg-white border border-zinc-200 rounded-lg p-6" data-testid="kpi-students-in-class">
+    <div class="text-[11px] uppercase tracking-widest text-zinc-500">Students in {{ selected_class|default:"class" }}</div>
+    <div class="mt-2 text-3xl font-display font-bold tabular-nums">{{ summary.students }}</div>
+  </div>
+  <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-6" data-testid="kpi-passed">
+    <div class="text-[11px] uppercase tracking-widest text-emerald-700">Passed</div>
+    <div class="mt-2 text-3xl font-display font-bold tabular-nums text-emerald-700">{{ summary.passed }}</div>
+  </div>
+  <div class="bg-red-50 border border-red-200 rounded-lg p-6" data-testid="kpi-failed">
+    <div class="text-[11px] uppercase tracking-widest text-red-700">Failed</div>
+    <div class="mt-2 text-3xl font-display font-bold tabular-nums text-red-700">{{ summary.failed }}</div>
+  </div>
+  <div class="bg-amber-50 border border-amber-200 rounded-lg p-6" data-testid="kpi-incomplete">
+    <div class="text-[11px] uppercase tracking-widest text-amber-700">Incomplete</div>
+    <div class="mt-2 text-3xl font-display font-bold tabular-nums text-amber-700">{{ summary.incomplete }}</div>
+  </div>
+</div>
+
+<!-- Per-student breakdown -->
+<div class="bg-white rounded-lg border border-zinc-200 overflow-hidden mb-8">
+  <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+    <h3 class="font-display font-semibold">Per-Student Breakdown — {{ selected_class|default:"select a class" }}{% if semester %} · {{ semester|upper }}{% endif %}{% if selected_year %} · {{ selected_year.name }}{% endif %}</h3>
+    <span class="text-xs text-zinc-500">{{ rows|length }} student{{ rows|length|pluralize }}</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm" data-testid="academic-report-table">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
+        <tr>
+          <th class="px-5 py-3 text-left">Student</th>
+          <th class="px-5 py-3 text-left">Status</th>
+          <th class="px-5 py-3 text-right">Average %</th>
+          <th class="px-5 py-3 text-left">Subjects Graded</th>
+          <th class="px-5 py-3 text-left">Failed Subjects</th>
+          <th class="px-5 py-3 text-left">Remaining Subjects</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for r in rows %}
+        <tr data-testid="report-row-{{ r.student.id }}">
+          <td class="px-5 py-3">
+            <a href="/api/students/{{ r.student.id }}/" class="font-medium text-zinc-900 hover:text-blue-600">{{ r.student.full_name }}</a>
+            <div class="text-xs text-zinc-500 font-mono">{{ r.student.admission_no }}</div>
+          </td>
+          <td class="px-5 py-3">
+            {% if r.status == 'passed' %}
+              <span data-testid="status-passed-{{ r.student.id }}" class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"><i class="ph-bold ph-check-circle mr-1"></i> Passed</span>
+            {% elif r.status == 'failed' %}
+              <span data-testid="status-failed-{{ r.student.id }}" class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200"><i class="ph-bold ph-x-circle mr-1"></i> Failed</span>
+            {% else %}
+              <span data-testid="status-incomplete-{{ r.student.id }}" class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200"><i class="ph-bold ph-clock-countdown mr-1"></i> Incomplete</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-right tabular-nums font-semibold">{{ r.avg_pct }}%</td>
+          <td class="px-5 py-3">
+            <div class="flex flex-wrap gap-1">
+              {% for subj, g in r.graded %}
+                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs ring-1 ring-inset {% if g.is_pass %}bg-emerald-50 text-emerald-700 ring-emerald-200{% else %}bg-red-50 text-red-700 ring-red-200{% endif %}">{{ subj.name }} <span class="font-mono ml-1">{{ g.percentage }}%</span></span>
+              {% empty %}
+                <span class="text-xs text-zinc-400">—</span>
+              {% endfor %}
+            </div>
+          </td>
+          <td class="px-5 py-3">
+            <div class="flex flex-wrap gap-1">
+              {% for subj in r.failed %}
+                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">{{ subj.name }}</span>
+              {% empty %}
+                <span class="text-xs text-zinc-400">none</span>
+              {% endfor %}
+            </div>
+          </td>
+          <td class="px-5 py-3">
+            <div class="flex flex-wrap gap-1">
+              {% for subj in r.remaining %}
+                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">{{ subj.name }}</span>
+              {% empty %}
+                <span class="text-xs text-emerald-700">all graded ✓</span>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="px-5 py-12 text-center text-zinc-500">No students in this class. Try selecting another class.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Yearly pass/fail roll-up -->
+<div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+  <div class="px-5 py-4 border-b border-zinc-200">
+    <h3 class="font-display font-semibold">Years Passed / Failed — All Students</h3>
+    <p class="text-xs text-zinc-500 mt-1">A student counts as <span class="text-red-700 font-medium">failed</span> for a given academic year if they fail any single subject within that year.</p>
+  </div>
+  <table class="min-w-full text-sm" data-testid="yearly-rollup-table">
+    <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+      <th class="px-5 py-3 text-left">Academic Year</th>
+      <th class="px-5 py-3 text-right">Total Students Graded</th>
+      <th class="px-5 py-3 text-right">Passed</th>
+      <th class="px-5 py-3 text-right">Failed</th>
+      <th class="px-5 py-3 text-right">Pass Rate</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for r in by_year %}
+      <tr>
+        <td class="px-5 py-3 font-medium">{{ r.year.name }}{% if r.year.is_current %} <span class="text-xs text-blue-600">(current)</span>{% endif %}</td>
+        <td class="px-5 py-3 text-right tabular-nums">{{ r.total }}</td>
+        <td class="px-5 py-3 text-right tabular-nums text-emerald-700">{{ r.passed }}</td>
+        <td class="px-5 py-3 text-right tabular-nums text-red-700">{{ r.failed }}</td>
+        <td class="px-5 py-3 text-right tabular-nums">{% if r.total %}{% widthratio r.passed r.total 100 %}%{% else %}—{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="px-5 py-6 text-center text-zinc-500">No grading data yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

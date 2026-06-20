@@ -1,20 +1,51 @@
 {% extends "dashboard_base.html" %}
 {% block title %}Grades{% endblock %}
-{% block page_title %}Grades{% endblock %}
+{% block page_title %}Grades / Exam Records{% endblock %}
 {% block topbar_actions %}
 <a href="/api/grades/add/" data-testid="add-grade-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Record Grade</a>
 {% endblock %}
 {% block content %}
+<!-- Filters -->
+<form method="get" class="bg-white rounded-lg border border-zinc-200 p-4 mb-5 flex flex-wrap items-end gap-3" data-testid="grade-filter-form">
+  <div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Semester</label>
+    <select name="semester" data-testid="filter-semester"
+      class="rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600">
+      <option value="">All semesters</option>
+      {% for code, label in semesters %}
+        <option value="{{ code }}" {% if semester == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Academic Year</label>
+    <select name="year" data-testid="filter-year"
+      class="rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-blue-600">
+      <option value="">All years</option>
+      {% for y in years %}
+        <option value="{{ y.id }}" {% if year_id == y.id|stringformat:"s" %}selected{% endif %}>{{ y.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" data-testid="apply-filter-btn"
+    class="inline-flex items-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
+    <i class="ph-bold ph-funnel mr-2"></i> Filter
+  </button>
+  <a href="/api/grades/" class="text-sm text-zinc-500 hover:text-zinc-900">Reset</a>
+</form>
+
 <div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
   <table class="min-w-full divide-y divide-zinc-200" data-testid="grades-table">
     <thead class="bg-zinc-50"><tr>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Date</th>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Student</th>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Subject</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Year / Semester</th>
       <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Exam</th>
       <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Score</th>
       <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">%</th>
       <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Grade</th>
+      <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
       <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
     </tr></thead>
     <tbody class="divide-y divide-zinc-100">
@@ -23,16 +54,21 @@
         <td class="px-6 py-4 text-sm">{{ g.recorded_at }}</td>
         <td class="px-6 py-4 text-sm font-medium text-zinc-900">{{ g.student.full_name }}</td>
         <td class="px-6 py-4 text-sm">{{ g.subject.name }}</td>
+        <td class="px-6 py-4 text-sm">{{ g.academic_year.name|default:"—" }}<div class="text-xs text-zinc-500">{{ g.get_semester_display }}</div></td>
         <td class="px-6 py-4 text-sm">{{ g.exam_name }}</td>
         <td class="px-6 py-4 text-sm text-right tabular-nums">{{ g.score }} / {{ g.total }}</td>
         <td class="px-6 py-4 text-sm text-right tabular-nums">{{ g.percentage }}%</td>
         <td class="px-6 py-4 text-sm text-center font-bold">{{ g.letter }}</td>
+        <td class="px-6 py-4 text-center">
+          {% if g.is_pass %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Pass</span>
+          {% else %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">Fail</span>{% endif %}
+        </td>
         <td class="px-6 py-4 text-right text-sm">
           <a href="/api/grades/{{ g.id }}/edit/" class="text-zinc-700 hover:text-blue-600">Edit</a>
           <a href="/api/grades/{{ g.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
         </td>
       </tr>
-      {% empty %}<tr><td colspan="8" class="px-6 py-12 text-center text-sm text-zinc-500">No grades recorded.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="10" class="px-6 py-12 text-center text-sm text-zinc-500">No grades match the filters.</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>
