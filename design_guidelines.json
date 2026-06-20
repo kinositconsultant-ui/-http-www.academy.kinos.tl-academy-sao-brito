@@ -1,0 +1,161 @@
+{
+  "theme": "Archetype 4: Swiss & High-Contrast (Light Theme Variant)",
+  "aesthetic_description": "A highly structured, high-density, authoritative enterprise dashboard built for scale. Focuses on clarity, trust, and operational efficiency over decoration. Avoids purple/teal 'AI-slop'. Employs a 'Control Room Grid' for density, utilizing stark whites, zinc grays for subtle structure, and a deep Corporate Blue (#2563EB) for action items. The aesthetic is clean, tabular, and print-inspired but optimized for digital screens.",
+  "tech_stack": {
+    "framework": "Django Templates (Server-rendered HTML)",
+    "styling": "Tailwind CSS via CDN",
+    "interactivity": "Vanilla JS / Alpine.js (via CDN if needed)",
+    "icons": "Phosphor Icons (via CDN)",
+    "no_react": true
+  },
+  "typography": {
+    "headings": {
+      "family": "'Satoshi', system-ui, sans-serif",
+      "import_url": "https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap",
+      "description": "Bold, authoritative sans-serif for dashboard titles, metrics, and report headers.",
+      "styles": {
+        "h1": "text-3xl font-bold tracking-tight text-zinc-900",
+        "h2": "text-2xl font-semibold tracking-tight text-zinc-900",
+        "h3": "text-lg font-medium text-zinc-800",
+        "kpi_value": "text-4xl font-bold tracking-tighter text-zinc-900"
+      }
+    },
+    "body": {
+      "family": "'Inter', system-ui, sans-serif",
+      "import_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap",
+      "description": "Clean, sterile, highly legible font for dense data tables and forms. Use tabular-nums for financial digits.",
+      "styles": {
+        "base": "text-sm text-zinc-600",
+        "table_cell": "text-sm text-zinc-700 tabular-nums",
+        "label": "text-xs font-semibold uppercase tracking-wider text-zinc-500",
+        "metadata": "text-xs text-zinc-500"
+      }
+    }
+  },
+  "colors": {
+    "primary": {
+      "name": "Corporate Blue",
+      "classes": {
+        "bg": "bg-blue-600",
+        "text": "text-blue-600",
+        "border": "border-blue-600",
+        "hover": "hover:bg-blue-700 hover:text-white"
+      },
+      "hex": "#2563EB"
+    },
+    "surface": {
+      "main": "bg-zinc-50",
+      "card": "bg-white",
+      "sidebar": "bg-zinc-900",
+      "header": "bg-white/90 backdrop-blur-md"
+    },
+    "border": {
+      "default": "border-zinc-200",
+      "focus": "focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+      "table": "border-zinc-100"
+    },
+    "text": {
+      "primary": "text-zinc-900",
+      "secondary": "text-zinc-600",
+      "muted": "text-zinc-500",
+      "inverse": "text-white"
+    },
+    "status": {
+      "success": "bg-emerald-100 text-emerald-700",
+      "warning": "bg-amber-100 text-amber-700",
+      "danger": "bg-red-100 text-red-700",
+      "info": "bg-blue-100 text-blue-700"
+    }
+  },
+  "layout_spacing": {
+    "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "dashboard_grid": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+    "card_padding": "p-6",
+    "section_gap": "space-y-8",
+    "sidebar_width": "w-64",
+    "radius": "rounded-lg"
+  },
+  "components": {
+    "sidebar": {
+      "html_structure": "Dark vertical aside with logo, navigation links, and active state indicators.",
+      "classes": "fixed inset-y-0 left-0 w-64 bg-zinc-900 text-zinc-300 border-r border-zinc-800 flex flex-col",
+      "link_classes": "flex items-center gap-3 px-4 py-2 rounded-md hover:bg-zinc-800 hover:text-white transition-colors",
+      "active_link_classes": "bg-blue-600 text-white font-medium"
+    },
+    "topbar": {
+      "html_structure": "Sticky header for page context, search, and user profile.",
+      "classes": "sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-zinc-200 bg-white/90 backdrop-blur-md px-4 sm:gap-x-6 sm:px-6 lg:px-8"
+    },
+    "kpi_card": {
+      "html_structure": "Simple white card with label, prominent number, and trend indicator.",
+      "classes": "bg-white border border-zinc-200 rounded-lg p-6 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200",
+      "label_classes": "text-xs font-semibold uppercase tracking-wider text-zinc-500",
+      "value_classes": "mt-2 text-3xl font-bold tracking-tight text-zinc-900",
+      "trend_classes": "mt-2 flex items-center text-sm font-medium"
+    },
+    "data_table": {
+      "html_structure": "Full-width table inside a card container with sticky headers and zebra striping.",
+      "wrapper_classes": "overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white",
+      "table_classes": "min-w-full divide-y divide-zinc-200",
+      "th_classes": "px-6 py-3 bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500",
+      "td_classes": "px-6 py-4 whitespace-nowrap text-sm text-zinc-700 tabular-nums"
+    },
+    "button": {
+      "primary": "inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
+      "secondary": "inline-flex items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 transition-colors",
+      "danger": "inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition-colors"
+    },
+    "form_input": {
+      "wrapper": "space-y-1",
+      "label": "block text-sm font-medium text-zinc-700",
+      "input": "block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+    },
+    "badge": {
+      "classes": "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
+    }
+  },
+  "image_urls": {
+    "login_background": {
+      "url": "https://images.pexels.com/photos/15316918/pexels-photo-15316918.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Innovative modern architecture campus building during twilight. Use as side-panel background on the login page.",
+      "category": "background"
+    },
+    "hero_office": {
+      "url": "https://images.unsplash.com/photo-1685456891912-c09f9cd252eb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjB1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYXJjaGl0ZWN0dXJlfGVufDB8fHx8MTc4MTkzNjk2MXww&ixlib=rb-4.1.0&q=85",
+      "description": "Modern university campus building with a clock, representing the academy's modern infrastructure.",
+      "category": "hero"
+    },
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzh8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMGNvcnBvcmF0ZXxlbnwwfHx8fDE3ODE5MzY5NjF8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Professional headshot of a female employee.",
+        "category": "avatar"
+      },
+      {
+        "url": "https://images.pexels.com/photos/37148308/pexels-photo-37148308.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Professional headshot of a male business professional in blue suit.",
+        "category": "avatar"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1701096374092-bb70915fdc5c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzh8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMGNvcnBvcmF0ZXxlbnwwfHx8fDE3ODE5MzY5NjF8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Professional female in blue blazer.",
+        "category": "avatar"
+      }
+    ]
+  },
+  "accessibility_and_testing": {
+    "data_testid_rule": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case. Example: data-testid='submit-payment-btn'.",
+    "aria_labels": "Use aria-labels for icon-only buttons or links.",
+    "focus_states": "Ensure every link, input, and button has clear focus:ring classes with high contrast."
+  },
+  "instructions_to_main_agent": [
+    "Since this is Django, build layouts using Django Template inheritance (e.g., base.html, dashboard_base.html).",
+    "Use Tailwind CSS via CDN link in the base template: <script src=\"https://cdn.tailwindcss.com\"></script>",
+    "Configure Tailwind directly in the CDN script tag using: tailwind.config = { theme: { extend: { fontFamily: { sans: ['Satoshi', 'Inter', 'sans-serif'], mono: ['ui-monospace'] } } } }",
+    "Do NOT use React. Render raw HTML tables, forms, and cards, utilizing Django templating tags for loops and conditionals.",
+    "Use Phosphor Icons via CDN: <script src=\"https://unpkg.com/@phosphor-icons/web\"></script>",
+    "Strictly apply data-testid attributes to every button, anchor tag, form input, and dashboard KPI.",
+    "Implement the 5-9 core metric rule in the dashboard: keep it clean, utilizing the 'kpi_card' structure and tabular figures for data tables.",
+    "For the login page, create a split-screen design using the 'login_background' image on one side and a clean, vertically centered form on the other side."
+  ]
+}
