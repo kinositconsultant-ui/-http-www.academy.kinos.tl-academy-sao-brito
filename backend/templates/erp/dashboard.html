@@ -94,7 +94,7 @@
         <span class="text-xs text-zinc-500">{{ selected_year.name|default:"Current year" }}</span>
       </div>
       <p class="text-xs text-zinc-500 mb-4">Highest-scoring student per semester (cumulative percentage).</p>
-      <canvas id="chart-semester" height="180"></canvas>
+      <div class="relative" style="height: 220px;"><canvas id="chart-semester"></canvas></div>
       <ul class="mt-4 space-y-1 text-xs">
         {% for t in top_by_semester %}
         <li class="flex justify-between border-t border-zinc-100 pt-1 first:border-0 first:pt-0">
@@ -111,7 +111,7 @@
         <span class="text-xs text-zinc-500">All years</span>
       </div>
       <p class="text-xs text-zinc-500 mb-4">Best-performing student in each academic year.</p>
-      <canvas id="chart-year" height="180"></canvas>
+      <div class="relative" style="height: 220px;"><canvas id="chart-year"></canvas></div>
       <ul class="mt-4 space-y-1 text-xs">
         {% for t in top_by_year %}
         <li class="flex justify-between border-t border-zinc-100 pt-1 first:border-0 first:pt-0">
@@ -134,7 +134,7 @@
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-5">
       <div class="lg:col-span-3 px-6 py-4">
-        <canvas id="chart-good" height="200"></canvas>
+        <div class="relative" style="height: 340px;"><canvas id="chart-good"></canvas></div>
       </div>
       <div class="lg:col-span-2 border-l border-zinc-100">
         <table class="min-w-full text-sm">

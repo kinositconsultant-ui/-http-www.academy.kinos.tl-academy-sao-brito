@@ -35,6 +35,17 @@
 8. HR: Employees, Leave Requests with approve/reject.
 9. Finance Report (YTD income, expense, net, donations, breakdowns by category/source).
 
+## Implemented (2026-02)
+- Dashboard Chart.js layout fix (2026-02-20): all three canvases wrapped in
+  fixed-height `.relative` containers (220/220/340px) with
+  `maintainAspectRatio: false` — chart bars now render at the correct size
+  instead of expanding off-screen. Stale in-memory templates were the actual
+  blocker; a backend restart cleared the cached compiled templates.
+- Bulk PDF report cards verified end-to-end (2026-02-20):
+  `GET /api/classes/<id>/report-cards.zip[?year=<id>]` returns a valid ZIP
+  containing one `report-card_<name>_<admission>.pdf` per active student.
+  Trigger button is on the Academic Report page.
+
 ## Implemented (2026-01)
 - Code-review pass (2026-01-20):
   - Removed dead mis-located management command at `accounts/management/__init__.py`
