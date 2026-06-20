@@ -377,6 +377,8 @@ def invoice_detail(request, pk):
             )
             messages.success(request, "Payment recorded.")
             return redirect("invoice_detail", pk=invoice.pk)
+        else:
+            messages.error(request, f"Could not record payment: {form.errors.as_text()}")
     else:
         form = FeePaymentForm(initial={"paid_on": timezone.now().date()})
     return render(request, "erp/invoice_detail.html",

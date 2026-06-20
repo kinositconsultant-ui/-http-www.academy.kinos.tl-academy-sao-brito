@@ -30,7 +30,7 @@
         {% include "_nav_item.html" with url="/api/subjects/" label="Subjects" icon="ph-books" tid="nav-subjects" %}
         {% include "_nav_item.html" with url="/api/attendance/" label="Attendance" icon="ph-calendar-check" tid="nav-attendance" %}
         {% include "_nav_item.html" with url="/api/grades/" label="Grades" icon="ph-medal" tid="nav-grades" %}
-        {% include "_nav_item.html" with url="/api/years/" label="Academic Years" icon="ph-calendar-blank" tid="nav-years" %}
+        {% include "_nav_item.html" with url="/api/years/" label="Academic Years" icon="ph-calendar-blank" tid="nav-academic-years" %}
       </div>
 
       <div>
@@ -52,7 +52,7 @@
 
       <div>
         <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Settings</div>
-        {% include "_nav_item.html" with url="/api/school/" label="School Profile" icon="ph-buildings" tid="nav-school" %}
+        {% include "_nav_item.html" with url="/api/school/" label="School Profile" icon="ph-buildings" tid="nav-school-profile" %}
         {% if user.is_superuser or user.role == "admin" %}
           {% include "_nav_item.html" with url="/api/users/" label="System Users" icon="ph-user-gear" tid="nav-users" %}
         {% endif %}
@@ -63,7 +63,7 @@
     <div class="border-t border-zinc-800 p-3">
       <form action="/api/logout/" method="post">
         {% csrf_token %}
-        <button type="submit" data-testid="logout-btn" class="w-full inline-flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">
+        <button type="submit" data-testid="logout-btn" id="nav-logout" class="w-full inline-flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">
           <span class="flex items-center gap-2"><i class="ph ph-sign-out"></i> Sign out</span>
           <span class="text-[10px] text-zinc-500 truncate max-w-[100px]">{{ user.username }}</span>
         </button>

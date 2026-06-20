@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend regression re-test after iteration_1 fixes. ALL 6 review items PASS. Verified: (1) /api/invoices/ list returns 200 with 7 seeded invoices, (2) Recording a payment on Invoice #6 (Rita Carvalho, EUR 850 outstanding) now PERSISTS — Paid=850, Balance=0, status badge 'Paid' in emerald, Payment History row visible, success flash 'Payment recorded.' shown, (3) Login brand panel now shows 'Instituto São João de Brito' (school.name driven), (4) Sidebar test-ids correct: nav-academic-years, nav-school-profile present; logout button has both data-testid='logout-btn' and id='nav-logout', (5) /api/incomes/ shows new 'Fee payment - Rita Carvalho' row sourced 'Tuition Fees' (+850.00). 5 backfilled fee-payment incomes also visible. (6) /api/reports/finance/ Income by Source now lists Fees: 5,500.00 alongside Donation: 17,750.00. Smoke also re-confirms donation create auto-creates an Income (+1,250.00, Banco Lusitano), salary 'Mark Paid' auto-creates an Expense (Maria Pereira pay → +1 expense row), leave already approved by previous run (no pending leaves), and logout redirects to /api/login/.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/invoices/?status=pending", "issue": "Pending tab is empty because all seeded invoices are now Paid/Partial/Overdue (none with amount_paid=0 AND status='pending'). Spec said 'open a pending invoice'; the closest available was an Overdue invoice (#6) with full balance still owed, which behaves identically for the payment-persistence assertion. Consider seeding at least one true 'pending' invoice for future test runs."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All authenticated pages", "issues": ["cdn.tailwindcss.com still in use (Tailwind CDN warning in console). Non-blocking but flagged for production build."]}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_2.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FeePaymentForm.Meta.exclude now correctly contains ['received_by','invoice'] — payment POST persists.",
+    "templates/erp/invoice_list.html broken {% for %} removed — list page no longer 500s.",
+    "templates/accounts/login.html brand uses {{ school.name|default:'Academy ERP' }} — correct school name now appears pre-login.",
+    "Sidebar logout button correctly carries BOTH data-testid='logout-btn' AND id='nav-logout' as requested by spec.",
+    "erp/views.py invoice_detail() now surfaces messages.error on form.is_valid() failure — silent failures fixed.",
+    "Tailwind via CDN script still in dashboard_base.html — would be flagged in production audits (low priority)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only run)", "frontend": "100% on review-request items; 100% on smoke (donation→income auto-create, salary→expense auto-create, invoice payment full E2E, logout)"},
+  "test_credentials": "admin / admin123 (used)",
+  "seed_data_creation": "Created in this run: (a) Full payment of EUR 850 on Invoice #6 (Rita Carvalho) — invoice now Paid, ledger row in Incomes. (b) Donation EUR 1,250 from Banco Lusitano dated 2026-06-20 — auto-created matching Income row. (c) Marked salary 'Maria Pereira / January 2026' as Paid — auto-created matching Expense row. No cleanup performed; these are intentional regression artifacts.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iteration_1 critical bugs are CONFIRMED FIXED in iteration_2. Only minor open item is the cosmetic Tailwind CDN warning. Invoice #6 is now PAID in seed data, donation count is +1, expense count is +1, leave is already Approved — adjust assertions accordingly. Pending tab on /api/invoices/ is empty (all invoices now Paid/Partial/Overdue).",
+  "rca_of_the_issue": "N/A — no new issues found. Previous bugs (invoice list 500, payment silent fail, login brand, sidebar testids, finance-report fees breakdown) are fully resolved."
+}

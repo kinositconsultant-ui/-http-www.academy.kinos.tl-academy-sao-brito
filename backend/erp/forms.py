@@ -71,7 +71,7 @@ class FeeInvoiceForm(forms.ModelForm):
 class FeePaymentForm(forms.ModelForm):
     class Meta:
         model = FeePayment
-        exclude = ["received_by"]
+        exclude = ["received_by", "invoice"]
         widgets = {"paid_on": _DATE}
 
 
