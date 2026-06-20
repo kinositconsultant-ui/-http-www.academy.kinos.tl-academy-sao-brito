@@ -1,4 +1,5 @@
 from decimal import Decimal
+from dataclasses import dataclass
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
@@ -23,79 +24,79 @@ from .forms import (
 
 # ---------- Helpers ----------
 
+@dataclass
+class FormView:
+    """Grouped configuration for the generic save-form helper."""
+    form_cls: type
+    redirect_to: str
+    success_msg: str
+    title: str
+    template: str = "erp/form.html"
+    extra: dict = None
+
+
 def _crud_list(request, model, template, extra=None):
-    objs = model.objects.all()
-    ctx = {"objects": objs}
+    ctx = {"objects": model.objects.all()}
     if extra:
         ctx.update(extra)
     return render(request, template, ctx)
 
 
-def _save_form(request, form_cls, instance, redirect_to, success_msg, template, title, extra=None):
+def _save_form(request, cfg: FormView, instance=None):
     if request.method == "POST":
-        form = form_cls(request.POST, request.FILES, instance=instance)
+        form = cfg.form_cls(request.POST, request.FILES, instance=instance)
         if form.is_valid():
             form.save()
-            messages.success(request, success_msg)
-            return redirect(redirect_to)
+            messages.success(request, cfg.success_msg)
+            return redirect(cfg.redirect_to)
     else:
-        form = form_cls(instance=instance)
-    ctx = {"form": form, "title": title}
-    if extra:
-        ctx.update(extra)
-    return render(request, template, ctx)
+        form = cfg.form_cls(instance=instance)
+    ctx = {"form": form, "title": cfg.title}
+    if cfg.extra:
+        ctx.update(cfg.extra)
+    return render(request, cfg.template, ctx)
 
 
 # ---------- Dashboard ----------
 
+def _count_kpis():
+    return {
+        "students": Student.objects.filter(is_active=True).count(),
+        "teachers": Teacher.objects.filter(is_active=True).count(),
+        "employees": Employee.objects.filter(is_active=True).count(),
+        "classes": SchoolClass.objects.count(),
+        "pending_leaves": LeaveRequest.objects.filter(status="pending").count(),
+    }
+
+
+def _money_kpis(month_start):
+    fees_mtd = FeePayment.objects.filter(paid_on__gte=month_start).aggregate(s=Sum("amount"))["s"] or 0
+    outstanding_agg = FeeInvoice.objects.exclude(status="paid").aggregate(
+        amt=Sum("amount"), paid=Sum("amount_paid"))
+    outstanding_balance = (outstanding_agg["amt"] or 0) - (outstanding_agg["paid"] or 0)
+    return {
+        "fees_collected_month": fees_mtd,
+        "outstanding_balance": outstanding_balance,
+        "expenses_month": Expense.objects.filter(date__gte=month_start).aggregate(s=Sum("amount"))["s"] or 0,
+        "donations_month": Donation.objects.filter(date__gte=month_start).aggregate(s=Sum("amount"))["s"] or 0,
+        "salary_pending": SalaryPayment.objects.filter(status="pending").aggregate(s=Sum("amount"))["s"] or 0,
+    }
+
+
+def _recent_activity():
+    return {
+        "recent_payments": FeePayment.objects.select_related("invoice__student").order_by("-paid_on")[:6],
+        "recent_expenses": Expense.objects.order_by("-date")[:6],
+        "recent_donations": Donation.objects.select_related("donor").order_by("-date")[:6],
+    }
+
+
 @login_required
 def dashboard(request):
-    today = timezone.now().date()
-    month_start = today.replace(day=1)
-
-    total_students = Student.objects.filter(is_active=True).count()
-    total_teachers = Teacher.objects.filter(is_active=True).count()
-    total_employees = Employee.objects.filter(is_active=True).count()
-    total_classes = SchoolClass.objects.count()
-
-    fees_collected_month = FeePayment.objects.filter(paid_on__gte=month_start).aggregate(
-        s=Sum("amount"))["s"] or 0
-    outstanding = FeeInvoice.objects.exclude(status="paid").aggregate(
-        s=Sum("amount"))["s"] or 0
-    outstanding_paid = FeeInvoice.objects.exclude(status="paid").aggregate(
-        s=Sum("amount_paid"))["s"] or 0
-    outstanding_balance = (outstanding or 0) - (outstanding_paid or 0)
-
-    expenses_month = Expense.objects.filter(date__gte=month_start).aggregate(
-        s=Sum("amount"))["s"] or 0
-    donations_month = Donation.objects.filter(date__gte=month_start).aggregate(
-        s=Sum("amount"))["s"] or 0
-    salary_pending = SalaryPayment.objects.filter(status="pending").aggregate(
-        s=Sum("amount"))["s"] or 0
-
-    pending_leaves = LeaveRequest.objects.filter(status="pending").count()
-
-    recent_payments = FeePayment.objects.select_related("invoice__student").order_by("-paid_on")[:6]
-    recent_expenses = Expense.objects.order_by("-date")[:6]
-    recent_donations = Donation.objects.select_related("donor").order_by("-date")[:6]
-
-    return render(request, "erp/dashboard.html", {
-        "kpis": {
-            "students": total_students,
-            "teachers": total_teachers,
-            "employees": total_employees,
-            "classes": total_classes,
-            "fees_collected_month": fees_collected_month,
-            "outstanding_balance": outstanding_balance,
-            "expenses_month": expenses_month,
-            "donations_month": donations_month,
-            "salary_pending": salary_pending,
-            "pending_leaves": pending_leaves,
-        },
-        "recent_payments": recent_payments,
-        "recent_expenses": recent_expenses,
-        "recent_donations": recent_donations,
-    })
+    month_start = timezone.now().date().replace(day=1)
+    kpis = {**_count_kpis(), **_money_kpis(month_start)}
+    ctx = {"kpis": kpis, **_recent_activity()}
+    return render(request, "erp/dashboard.html", ctx)
 
 
 # ---------- Academic Years ----------
@@ -106,14 +107,14 @@ def academic_year_list(request):
 
 @login_required
 def academic_year_create(request):
-    return _save_form(request, AcademicYearForm, None, "academic_year_list",
-                      "Academic year created.", "erp/form.html", "Add Academic Year")
+    return _save_form(request,
+        FormView(AcademicYearForm, "academic_year_list", "Academic year created.", "Add Academic Year"))
 
 @login_required
 def academic_year_edit(request, pk):
     obj = get_object_or_404(AcademicYear, pk=pk)
-    return _save_form(request, AcademicYearForm, obj, "academic_year_list",
-                      "Academic year updated.", "erp/form.html", "Edit Academic Year")
+    return _save_form(request,
+        FormView(AcademicYearForm, "academic_year_list", "Academic year updated.", "Edit Academic Year"), instance=obj)
 
 @login_required
 def academic_year_delete(request, pk):
@@ -133,14 +134,14 @@ def class_list(request):
 
 @login_required
 def class_create(request):
-    return _save_form(request, SchoolClassForm, None, "class_list",
-                      "Class created.", "erp/form.html", "Add Class")
+    return _save_form(request,
+        FormView(SchoolClassForm, "class_list", "Class created.", "Add Class"))
 
 @login_required
 def class_edit(request, pk):
     obj = get_object_or_404(SchoolClass, pk=pk)
-    return _save_form(request, SchoolClassForm, obj, "class_list",
-                      "Class updated.", "erp/form.html", "Edit Class")
+    return _save_form(request,
+        FormView(SchoolClassForm, "class_list", "Class updated.", "Edit Class"), instance=obj)
 
 @login_required
 def class_delete(request, pk):
@@ -160,14 +161,14 @@ def subject_list(request):
 
 @login_required
 def subject_create(request):
-    return _save_form(request, SubjectForm, None, "subject_list",
-                      "Subject created.", "erp/form.html", "Add Subject")
+    return _save_form(request,
+        FormView(SubjectForm, "subject_list", "Subject created.", "Add Subject"))
 
 @login_required
 def subject_edit(request, pk):
     obj = get_object_or_404(Subject, pk=pk)
-    return _save_form(request, SubjectForm, obj, "subject_list",
-                      "Subject updated.", "erp/form.html", "Edit Subject")
+    return _save_form(request,
+        FormView(SubjectForm, "subject_list", "Subject updated.", "Edit Subject"), instance=obj)
 
 @login_required
 def subject_delete(request, pk):
@@ -192,14 +193,14 @@ def student_list(request):
 
 @login_required
 def student_create(request):
-    return _save_form(request, StudentForm, None, "student_list",
-                      "Student admitted.", "erp/form.html", "Admit New Student")
+    return _save_form(request,
+        FormView(StudentForm, "student_list", "Student admitted.", "Admit New Student"))
 
 @login_required
 def student_edit(request, pk):
     obj = get_object_or_404(Student, pk=pk)
-    return _save_form(request, StudentForm, obj, "student_list",
-                      "Student updated.", "erp/form.html", "Edit Student")
+    return _save_form(request,
+        FormView(StudentForm, "student_list", "Student updated.", "Edit Student"), instance=obj)
 
 @login_required
 def student_detail(request, pk):
@@ -231,14 +232,14 @@ def teacher_list(request):
 
 @login_required
 def teacher_create(request):
-    return _save_form(request, TeacherForm, None, "teacher_list",
-                      "Teacher added.", "erp/form.html", "Add Teacher")
+    return _save_form(request,
+        FormView(TeacherForm, "teacher_list", "Teacher added.", "Add Teacher"))
 
 @login_required
 def teacher_edit(request, pk):
     obj = get_object_or_404(Teacher, pk=pk)
-    return _save_form(request, TeacherForm, obj, "teacher_list",
-                      "Teacher updated.", "erp/form.html", "Edit Teacher")
+    return _save_form(request,
+        FormView(TeacherForm, "teacher_list", "Teacher updated.", "Edit Teacher"), instance=obj)
 
 @login_required
 def teacher_delete(request, pk):
@@ -259,14 +260,14 @@ def attendance_list(request):
 
 @login_required
 def attendance_create(request):
-    return _save_form(request, AttendanceForm, None, "attendance_list",
-                      "Attendance recorded.", "erp/form.html", "Mark Attendance")
+    return _save_form(request,
+        FormView(AttendanceForm, "attendance_list", "Attendance recorded.", "Mark Attendance"))
 
 @login_required
 def attendance_edit(request, pk):
     obj = get_object_or_404(Attendance, pk=pk)
-    return _save_form(request, AttendanceForm, obj, "attendance_list",
-                      "Attendance updated.", "erp/form.html", "Edit Attendance")
+    return _save_form(request,
+        FormView(AttendanceForm, "attendance_list", "Attendance updated.", "Edit Attendance"), instance=obj)
 
 @login_required
 def attendance_delete(request, pk):
@@ -286,14 +287,14 @@ def grade_list(request):
 
 @login_required
 def grade_create(request):
-    return _save_form(request, GradeForm, None, "grade_list",
-                      "Grade recorded.", "erp/form.html", "Record Grade")
+    return _save_form(request,
+        FormView(GradeForm, "grade_list", "Grade recorded.", "Record Grade"))
 
 @login_required
 def grade_edit(request, pk):
     obj = get_object_or_404(Grade, pk=pk)
-    return _save_form(request, GradeForm, obj, "grade_list",
-                      "Grade updated.", "erp/form.html", "Edit Grade")
+    return _save_form(request,
+        FormView(GradeForm, "grade_list", "Grade updated.", "Edit Grade"), instance=obj)
 
 @login_required
 def grade_delete(request, pk):
@@ -312,14 +313,14 @@ def fee_structure_list(request):
 
 @login_required
 def fee_structure_create(request):
-    return _save_form(request, FeeStructureForm, None, "fee_structure_list",
-                      "Fee structure created.", "erp/form.html", "Add Fee Structure")
+    return _save_form(request,
+        FormView(FeeStructureForm, "fee_structure_list", "Fee structure created.", "Add Fee Structure"))
 
 @login_required
 def fee_structure_edit(request, pk):
     obj = get_object_or_404(FeeStructure, pk=pk)
-    return _save_form(request, FeeStructureForm, obj, "fee_structure_list",
-                      "Fee structure updated.", "erp/form.html", "Edit Fee Structure")
+    return _save_form(request,
+        FormView(FeeStructureForm, "fee_structure_list", "Fee structure updated.", "Edit Fee Structure"), instance=obj)
 
 @login_required
 def fee_structure_delete(request, pk):
@@ -346,14 +347,14 @@ def invoice_list(request):
 
 @login_required
 def invoice_create(request):
-    return _save_form(request, FeeInvoiceForm, None, "invoice_list",
-                      "Invoice created.", "erp/form.html", "Create Invoice")
+    return _save_form(request,
+        FormView(FeeInvoiceForm, "invoice_list", "Invoice created.", "Create Invoice"))
 
 @login_required
 def invoice_edit(request, pk):
     obj = get_object_or_404(FeeInvoice, pk=pk)
-    return _save_form(request, FeeInvoiceForm, obj, "invoice_list",
-                      "Invoice updated.", "erp/form.html", "Edit Invoice")
+    return _save_form(request,
+        FormView(FeeInvoiceForm, "invoice_list", "Invoice updated.", "Edit Invoice"), instance=obj)
 
 @login_required
 def invoice_detail(request, pk):
@@ -402,14 +403,14 @@ def salary_list(request):
 
 @login_required
 def salary_create(request):
-    return _save_form(request, SalaryPaymentForm, None, "salary_list",
-                      "Salary record created.", "erp/form.html", "Add Salary Payment")
+    return _save_form(request,
+        FormView(SalaryPaymentForm, "salary_list", "Salary record created.", "Add Salary Payment"))
 
 @login_required
 def salary_edit(request, pk):
     obj = get_object_or_404(SalaryPayment, pk=pk)
-    return _save_form(request, SalaryPaymentForm, obj, "salary_list",
-                      "Salary record updated.", "erp/form.html", "Edit Salary Payment")
+    return _save_form(request,
+        FormView(SalaryPaymentForm, "salary_list", "Salary record updated.", "Edit Salary Payment"), instance=obj)
 
 @login_required
 def salary_pay(request, pk):
@@ -461,8 +462,8 @@ def expense_create(request):
 @login_required
 def expense_edit(request, pk):
     obj = get_object_or_404(Expense, pk=pk)
-    return _save_form(request, ExpenseForm, obj, "expense_list",
-                      "Expense updated.", "erp/form.html", "Edit Expense")
+    return _save_form(request,
+        FormView(ExpenseForm, "expense_list", "Expense updated.", "Edit Expense"), instance=obj)
 
 @login_required
 def expense_delete(request, pk):
@@ -483,14 +484,14 @@ def income_list(request):
 
 @login_required
 def income_create(request):
-    return _save_form(request, IncomeForm, None, "income_list",
-                      "Income recorded.", "erp/form.html", "Record Income")
+    return _save_form(request,
+        FormView(IncomeForm, "income_list", "Income recorded.", "Record Income"))
 
 @login_required
 def income_edit(request, pk):
     obj = get_object_or_404(Income, pk=pk)
-    return _save_form(request, IncomeForm, obj, "income_list",
-                      "Income updated.", "erp/form.html", "Edit Income")
+    return _save_form(request,
+        FormView(IncomeForm, "income_list", "Income updated.", "Edit Income"), instance=obj)
 
 @login_required
 def income_delete(request, pk):
@@ -510,14 +511,14 @@ def donor_list(request):
 
 @login_required
 def donor_create(request):
-    return _save_form(request, DonorForm, None, "donor_list",
-                      "Donor added.", "erp/form.html", "Add Donor")
+    return _save_form(request,
+        FormView(DonorForm, "donor_list", "Donor added.", "Add Donor"))
 
 @login_required
 def donor_edit(request, pk):
     obj = get_object_or_404(Donor, pk=pk)
-    return _save_form(request, DonorForm, obj, "donor_list",
-                      "Donor updated.", "erp/form.html", "Edit Donor")
+    return _save_form(request,
+        FormView(DonorForm, "donor_list", "Donor updated.", "Edit Donor"), instance=obj)
 
 @login_required
 def donor_detail(request, pk):
@@ -559,8 +560,8 @@ def donation_create(request):
 @login_required
 def donation_edit(request, pk):
     obj = get_object_or_404(Donation, pk=pk)
-    return _save_form(request, DonationForm, obj, "donation_list",
-                      "Donation updated.", "erp/form.html", "Edit Donation")
+    return _save_form(request,
+        FormView(DonationForm, "donation_list", "Donation updated.", "Edit Donation"), instance=obj)
 
 @login_required
 def donation_delete(request, pk):
@@ -579,14 +580,14 @@ def employee_list(request):
 
 @login_required
 def employee_create(request):
-    return _save_form(request, EmployeeForm, None, "employee_list",
-                      "Employee added.", "erp/form.html", "Add Employee")
+    return _save_form(request,
+        FormView(EmployeeForm, "employee_list", "Employee added.", "Add Employee"))
 
 @login_required
 def employee_edit(request, pk):
     obj = get_object_or_404(Employee, pk=pk)
-    return _save_form(request, EmployeeForm, obj, "employee_list",
-                      "Employee updated.", "erp/form.html", "Edit Employee")
+    return _save_form(request,
+        FormView(EmployeeForm, "employee_list", "Employee updated.", "Edit Employee"), instance=obj)
 
 @login_required
 def employee_delete(request, pk):
@@ -604,14 +605,14 @@ def leave_list(request):
 
 @login_required
 def leave_create(request):
-    return _save_form(request, LeaveRequestForm, None, "leave_list",
-                      "Leave request submitted.", "erp/form.html", "Submit Leave Request")
+    return _save_form(request,
+        FormView(LeaveRequestForm, "leave_list", "Leave request submitted.", "Submit Leave Request"))
 
 @login_required
 def leave_edit(request, pk):
     obj = get_object_or_404(LeaveRequest, pk=pk)
-    return _save_form(request, LeaveRequestForm, obj, "leave_list",
-                      "Leave updated.", "erp/form.html", "Edit Leave Request")
+    return _save_form(request,
+        FormView(LeaveRequestForm, "leave_list", "Leave updated.", "Edit Leave Request"), instance=obj)
 
 @login_required
 def leave_decide(request, pk, decision):

@@ -36,6 +36,19 @@
 9. Finance Report (YTD income, expense, net, donations, breakdowns by category/source).
 
 ## Implemented (2026-01)
+- Code-review pass (2026-01-20):
+  - Removed dead mis-located management command at `accounts/management/__init__.py`
+    (it was never executed by Django — should have been `commands/<name>.py`).
+  - Refactored `erp/views.py` `dashboard()` 17 locals → 1 helper + 3 focused
+    builders (`_count_kpis`, `_money_kpis`, `_recent_activity`).
+  - Refactored `_save_form()` 8 args → `FormView` dataclass + 2 args; updated
+    all 30 callers automatically.
+  - Cleaned style issues in `scripts/seed.py`. Lint: **0 errors**.
+  - React frontend hook warnings (`App.js`, `use-toast.js`) are in the
+    pre-existing CRA scaffold which is no longer used — the frontend is now a
+    static redirect (`public/index.html` → `/api/dashboard/`); React never
+    mounts. Files left untouched to avoid disturbing the unused frontend
+    service.
 - Login / Logout / Session auth with role-based User model. ✅
 - School profile seeded with **Instituto São João de Brito** (EUR currency, motto
   "Scientia · Caritas · Veritas"). ✅

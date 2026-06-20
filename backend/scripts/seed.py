@@ -3,7 +3,9 @@
 Usage: python manage.py shell < scripts/seed.py
 Or: python scripts/seed.py
 """
-import os, sys, django
+import os
+import sys
+import django
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -32,7 +34,7 @@ if created or not admin.has_usable_password():
     admin.is_staff = True
     admin.is_superuser = True
     admin.save()
-    print(f"[seed] admin user ready (admin/admin123)")
+    print("[seed] admin user ready (admin/admin123)")
 
 # Additional role-based users
 for uname, fname, lname, role, email in [
@@ -166,7 +168,8 @@ if not FeeInvoice.objects.exists():
             FeePayment.objects.create(invoice=inv, amount=Decimal("400"), method="cash",
                 reference="", paid_on=today - timedelta(days=4), received_by=admin)
             inv.amount_paid = Decimal("400")
-        inv.refresh_status(); inv.save()
+        inv.refresh_status()
+        inv.save()
 
 # ---------- Donors & donations ----------
 donors_data = [
