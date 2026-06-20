@@ -69,6 +69,175 @@
     </div>
   </div>
 
+  <!-- Academic Performance Charts -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg border border-zinc-200 p-6" data-testid="chart-top-by-semester">
+      <div class="flex items-center justify-between mb-1">
+        <h3 class="font-display font-semibold text-zinc-900">Top Score by Semester</h3>
+        <span class="text-xs text-zinc-500">{{ current_year.name|default:"Current year" }}</span>
+      </div>
+      <p class="text-xs text-zinc-500 mb-4">Highest-scoring student per semester (cumulative percentage).</p>
+      <canvas id="chart-semester" height="180"></canvas>
+      <ul class="mt-4 space-y-1 text-xs">
+        {% for t in top_by_semester %}
+        <li class="flex justify-between border-t border-zinc-100 pt-1 first:border-0 first:pt-0">
+          <span class="text-zinc-600">{{ t.label }}: <span class="font-medium text-zinc-900">{{ t.student_name }}</span></span>
+          <span class="tabular-nums font-semibold text-blue-700">{{ t.avg_pct }}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="bg-white rounded-lg border border-zinc-200 p-6" data-testid="chart-top-by-year">
+      <div class="flex items-center justify-between mb-1">
+        <h3 class="font-display font-semibold text-zinc-900">Top Score by Academic Year</h3>
+        <span class="text-xs text-zinc-500">All years</span>
+      </div>
+      <p class="text-xs text-zinc-500 mb-4">Best-performing student in each academic year.</p>
+      <canvas id="chart-year" height="180"></canvas>
+      <ul class="mt-4 space-y-1 text-xs">
+        {% for t in top_by_year %}
+        <li class="flex justify-between border-t border-zinc-100 pt-1 first:border-0 first:pt-0">
+          <span class="text-zinc-600">{{ t.year_name }}: <span class="font-medium text-zinc-900">{{ t.student_name }}</span></span>
+          <span class="tabular-nums font-semibold text-emerald-700">{{ t.avg_pct }}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Good Students leaderboard -->
+  <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden" data-testid="good-students-leaderboard">
+    <div class="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
+      <div>
+        <h3 class="font-display font-semibold text-zinc-900">Top 10 Good Students</h3>
+        <p class="text-xs text-zinc-500 mt-0.5">Ranked by overall percentage across all subjects, semesters, and years.</p>
+      </div>
+      <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200"><i class="ph-bold ph-medal mr-1"></i> Leaderboard</span>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-5">
+      <div class="lg:col-span-3 px-6 py-4">
+        <canvas id="chart-good" height="200"></canvas>
+      </div>
+      <div class="lg:col-span-2 border-l border-zinc-100">
+        <table class="min-w-full text-sm">
+          <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
+            <tr><th class="px-5 py-2 text-left">#</th><th class="px-5 py-2 text-left">Student</th><th class="px-5 py-2 text-right">Avg %</th></tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100">
+            {% for g in good_students %}
+            <tr data-testid="leaderboard-row-{{ forloop.counter }}">
+              <td class="px-5 py-2 text-xs font-bold text-zinc-500">{% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}#{{ forloop.counter }}{% endif %}</td>
+              <td class="px-5 py-2">
+                <div class="font-medium text-zinc-900">{{ g.student_name }}</div>
+                <div class="text-[11px] text-zinc-500">{{ g.class_label }} · {{ g.admission_no }}</div>
+              </td>
+              <td class="px-5 py-2 text-right tabular-nums font-semibold text-blue-700">{{ g.avg_pct }}%</td>
+            </tr>
+            {% empty %}<tr><td colspan="3" class="px-5 py-6 text-center text-zinc-500 text-sm">No grades yet.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+  (function () {
+    const palette = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
+    const baseOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.parsed.y || ctx.parsed}% — ${ctx.label}`
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: '#e4e4e7' } },
+        x: { grid: { display: false } }
+      }
+    };
+
+    // Top by Semester
+    new Chart(document.getElementById('chart-semester'), {
+      type: 'bar',
+      data: {
+        labels: [{% for t in top_by_semester %}"{{ t.label }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+          data: [{% for t in top_by_semester %}{{ t.avg_pct }}{% if not forloop.last %},{% endif %}{% endfor %}],
+          backgroundColor: palette.slice(0, 4),
+          borderRadius: 6, borderSkipped: false,
+          customNames: [{% for t in top_by_semester %}"{{ t.student_name }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+        }]
+      },
+      options: {
+        ...baseOpts,
+        plugins: {
+          ...baseOpts.plugins,
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.customNames[ctx.dataIndex]} — ${ctx.parsed.y}%`
+            }
+          }
+        }
+      }
+    });
+
+    // Top by Year
+    new Chart(document.getElementById('chart-year'), {
+      type: 'bar',
+      data: {
+        labels: [{% for t in top_by_year %}"{{ t.year_name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+          data: [{% for t in top_by_year %}{{ t.avg_pct }}{% if not forloop.last %},{% endif %}{% endfor %}],
+          backgroundColor: '#10b981',
+          borderRadius: 6, borderSkipped: false,
+          customNames: [{% for t in top_by_year %}"{{ t.student_name }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+        }]
+      },
+      options: {
+        ...baseOpts,
+        plugins: {
+          ...baseOpts.plugins,
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.customNames[ctx.dataIndex]} — ${ctx.parsed.y}%`
+            }
+          }
+        }
+      }
+    });
+
+    // Good Students Horizontal
+    new Chart(document.getElementById('chart-good'), {
+      type: 'bar',
+      data: {
+        labels: [{% for g in good_students %}"{{ g.student_name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+          data: [{% for g in good_students %}{{ g.avg_pct }}{% if not forloop.last %},{% endif %}{% endfor %}],
+          backgroundColor: '#2563eb',
+          borderRadius: 4, borderSkipped: false
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: '#e4e4e7' } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  })();
+  </script>
+
   <!-- Recent activity -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">

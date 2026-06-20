@@ -93,11 +93,100 @@ def _recent_activity():
     }
 
 
+def _top_by_semester(current_year):
+    """Top student per semester (in the current academic year).
+
+    Returns list of {semester_label, student_name, avg_pct}.
+    """
+    out = []
+    grade_qs = Grade.objects.filter(academic_year=current_year) if current_year else Grade.objects.all()
+    for code, label in Grade.SEMESTER_CHOICES:
+        rows = (grade_qs.filter(semester=code)
+                .values("student_id", "student__first_name", "student__last_name")
+                .annotate(total_score=Sum("score"), total_max=Sum("total"))
+                .order_by("-total_score"))
+        top = None
+        for r in rows:
+            tm = r["total_max"] or 0
+            if tm <= 0:
+                continue
+            pct = round(float(r["total_score"]) / float(tm) * 100, 2)
+            if top is None or pct > top["avg_pct"]:
+                top = {
+                    "label": label,
+                    "student_name": f"{r['student__first_name']} {r['student__last_name']}",
+                    "avg_pct": pct,
+                }
+        out.append(top or {"label": label, "student_name": "—", "avg_pct": 0})
+    return out
+
+
+def _top_by_year():
+    """Top student per academic year. List of {year_name, student_name, avg_pct}."""
+    out = []
+    for y in AcademicYear.objects.all().order_by("start_date"):
+        rows = (Grade.objects.filter(academic_year=y)
+                .values("student_id", "student__first_name", "student__last_name")
+                .annotate(total_score=Sum("score"), total_max=Sum("total"))
+                .order_by("-total_score"))
+        best = None
+        for r in rows:
+            tm = r["total_max"] or 0
+            if tm <= 0:
+                continue
+            pct = round(float(r["total_score"]) / float(tm) * 100, 2)
+            if best is None or pct > best["avg_pct"]:
+                best = {
+                    "year_name": y.name,
+                    "student_name": f"{r['student__first_name']} {r['student__last_name']}",
+                    "avg_pct": pct,
+                }
+        out.append(best or {"year_name": y.name, "student_name": "—", "avg_pct": 0})
+    return out
+
+
+def _good_students_leaderboard(limit=10):
+    """Top N students by overall percentage across all their grades."""
+    rows = (Grade.objects.values("student_id", "student__first_name",
+                                 "student__last_name", "student__admission_no",
+                                 "student__school_class__name",
+                                 "student__school_class__section")
+            .annotate(total_score=Sum("score"), total_max=Sum("total"),
+                      n_grades=Count("id"))
+            .order_by("-total_score"))
+    out = []
+    for r in rows:
+        tm = r["total_max"] or 0
+        if tm <= 0:
+            continue
+        pct = round(float(r["total_score"]) / float(tm) * 100, 2)
+        cls = r["student__school_class__name"] or ""
+        sec = r["student__school_class__section"] or ""
+        cls_label = f"{cls} - {sec}" if sec else cls
+        out.append({
+            "student_name": f"{r['student__first_name']} {r['student__last_name']}",
+            "admission_no": r["student__admission_no"],
+            "class_label": cls_label or "—",
+            "avg_pct": pct,
+            "n_grades": r["n_grades"],
+        })
+    out.sort(key=lambda x: x["avg_pct"], reverse=True)
+    return out[:limit]
+
+
 @login_required
 def dashboard(request):
     month_start = timezone.now().date().replace(day=1)
+    current_year = AcademicYear.objects.filter(is_current=True).first() or AcademicYear.objects.first()
     kpis = {**_count_kpis(), **_money_kpis(month_start)}
-    ctx = {"kpis": kpis, **_recent_activity()}
+    ctx = {
+        "kpis": kpis,
+        "current_year": current_year,
+        "top_by_semester": _top_by_semester(current_year),
+        "top_by_year": _top_by_year(),
+        "good_students": _good_students_leaderboard(limit=10),
+        **_recent_activity(),
+    }
     return render(request, "erp/dashboard.html", ctx)
 
 
