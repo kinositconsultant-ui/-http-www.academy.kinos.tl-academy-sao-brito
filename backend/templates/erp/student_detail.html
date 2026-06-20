@@ -1,0 +1,82 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+
+{% block title %}{{ student.full_name }}{% endblock %}
+{% block crumb %}Students{% endblock %}
+{% block page_title %}{{ student.full_name }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/api/students/{{ student.id }}/edit/" data-testid="edit-student-detail-btn"
+  class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
+  <i class="ph-bold ph-pencil-simple mr-2"></i> Edit
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="bg-white rounded-lg border border-zinc-200 p-6">
+    <div class="text-[11px] uppercase tracking-widest text-zinc-500">Profile</div>
+    <div class="mt-4 space-y-3 text-sm">
+      <div><span class="text-zinc-500">Admission No:</span> <span class="font-mono">{{ student.admission_no }}</span></div>
+      <div><span class="text-zinc-500">Class:</span> {{ student.school_class|default:"—" }}</div>
+      <div><span class="text-zinc-500">Gender:</span> {{ student.get_gender_display }}</div>
+      <div><span class="text-zinc-500">DOB:</span> {{ student.date_of_birth|default:"—" }}</div>
+      <div><span class="text-zinc-500">Parent:</span> {{ student.parent_name|default:"—" }}</div>
+      <div><span class="text-zinc-500">Phone:</span> {{ student.parent_phone|default:"—" }}</div>
+      <div><span class="text-zinc-500">Email:</span> {{ student.parent_email|default:"—" }}</div>
+      <div><span class="text-zinc-500">Address:</span> {{ student.address|default:"—" }}</div>
+    </div>
+  </div>
+
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white rounded-lg border border-zinc-200">
+      <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+        <h3 class="font-display font-semibold">Invoices</h3>
+        <a href="/api/invoices/add/" class="text-xs text-blue-600 hover:underline">+ Invoice</a>
+      </div>
+      <table class="min-w-full text-sm">
+        <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+          <th class="px-5 py-2 text-left">Title</th><th class="px-5 py-2 text-right">Amount</th>
+          <th class="px-5 py-2 text-right">Paid</th><th class="px-5 py-2">Status</th>
+          <th class="px-5 py-2">Due</th>
+        </tr></thead>
+        <tbody class="divide-y divide-zinc-100">
+          {% for inv in invoices %}
+          <tr>
+            <td class="px-5 py-3"><a href="/api/invoices/{{ inv.id }}/" class="text-blue-600 hover:underline">{{ inv.title }}</a></td>
+            <td class="px-5 py-3 text-right tabular-nums">{{ inv.amount|floatformat:2 }}</td>
+            <td class="px-5 py-3 text-right tabular-nums text-emerald-700">{{ inv.amount_paid|floatformat:2 }}</td>
+            <td class="px-5 py-3">{{ inv.get_status_display }}</td>
+            <td class="px-5 py-3">{{ inv.due_date }}</td>
+          </tr>
+          {% empty %}<tr><td colspan="5" class="px-5 py-6 text-zinc-500">No invoices.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-white rounded-lg border border-zinc-200">
+      <div class="px-5 py-4 border-b border-zinc-200">
+        <h3 class="font-display font-semibold">Grades</h3>
+      </div>
+      <table class="min-w-full text-sm">
+        <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+          <th class="px-5 py-2 text-left">Subject</th><th class="px-5 py-2">Exam</th>
+          <th class="px-5 py-2 text-right">Score</th><th class="px-5 py-2 text-right">%</th>
+          <th class="px-5 py-2 text-center">Grade</th>
+        </tr></thead>
+        <tbody class="divide-y divide-zinc-100">
+          {% for g in grades %}
+          <tr>
+            <td class="px-5 py-3">{{ g.subject.name }}</td>
+            <td class="px-5 py-3">{{ g.exam_name }}</td>
+            <td class="px-5 py-3 text-right tabular-nums">{{ g.score }} / {{ g.total }}</td>
+            <td class="px-5 py-3 text-right tabular-nums">{{ g.percentage }}%</td>
+            <td class="px-5 py-3 text-center font-semibold">{{ g.letter }}</td>
+          </tr>
+          {% empty %}<tr><td colspan="5" class="px-5 py-6 text-zinc-500">No grades recorded.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

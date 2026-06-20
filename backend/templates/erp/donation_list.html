@@ -1,0 +1,40 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Donations{% endblock %}
+{% block page_title %}Donations{% endblock %}
+{% block topbar_actions %}
+<a href="/api/donations/add/" data-testid="add-donation-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Record Donation</a>
+{% endblock %}
+{% block content %}
+<div class="mb-4 bg-white border border-zinc-200 rounded-lg px-6 py-4 inline-block">
+  <div class="text-xs uppercase tracking-wider text-zinc-500">Total Donations</div>
+  <div class="text-2xl font-display font-bold tabular-nums text-blue-700">{{ school.currency }} {{ total|floatformat:2|intcomma }}</div>
+</div>
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="donations-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Date</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Donor</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Purpose</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Receipt</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Amount</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for d in objects %}
+      <tr>
+        <td class="px-6 py-4 text-sm">{{ d.date }}</td>
+        <td class="px-6 py-4 text-sm font-medium"><a href="/api/donors/{{ d.donor.id }}/" class="hover:text-blue-600">{{ d.donor.name }}</a></td>
+        <td class="px-6 py-4 text-sm">{{ d.get_purpose_display }}</td>
+        <td class="px-6 py-4 text-sm font-mono">{{ d.receipt_no|default:"—" }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums text-blue-700">+{{ d.amount|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4 text-right text-sm">
+          <a href="/api/donations/{{ d.id }}/edit/" class="text-zinc-700 hover:text-blue-600">Edit</a>
+          <a href="/api/donations/{{ d.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">No donations yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

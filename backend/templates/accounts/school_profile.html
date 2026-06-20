@@ -1,0 +1,47 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}School Profile{% endblock %}
+{% block crumb %}Settings{% endblock %}
+{% block page_title %}School Profile{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 bg-white rounded-lg border border-zinc-200 p-8">
+    <form method="post" enctype="multipart/form-data" class="space-y-5" data-testid="school-form">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+        {% for field in form %}
+        <div class="{% if field.name == 'address' or field.name == 'motto' %}md:col-span-2{% endif %}">
+          <label class="block text-sm font-medium text-zinc-700 mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="mt-1 text-xs text-red-600">{{ field.errors|join:" " }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="pt-4 border-t border-zinc-100">
+        <button type="submit" data-testid="save-school-btn" class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-check mr-2"></i> Save Profile</button>
+      </div>
+    </form>
+    <style>
+      form[data-testid=school-form] input, form[data-testid=school-form] select, form[data-testid=school-form] textarea {
+        display:block;width:100%;padding:.5rem .75rem;border-radius:.375rem;border:0;color:#18181b;font-size:.875rem;box-shadow:0 0 0 1px #d4d4d8 inset;background:#fff;
+      }
+      form[data-testid=school-form] input:focus, form[data-testid=school-form] select:focus, form[data-testid=school-form] textarea:focus { outline:none; box-shadow:0 0 0 2px #2563eb inset; }
+    </style>
+  </div>
+
+  <div class="bg-zinc-900 text-white rounded-lg p-6">
+    <div class="text-[11px] uppercase tracking-widest text-zinc-400">Live Preview</div>
+    <h3 class="mt-2 font-display text-2xl font-bold">{{ school_obj.name|default:"Your School" }}</h3>
+    {% if school_obj.motto %}<p class="text-sm text-zinc-300 italic mt-1">"{{ school_obj.motto }}"</p>{% endif %}
+    <div class="mt-6 space-y-2 text-sm text-zinc-300">
+      <div class="flex gap-2"><i class="ph ph-identification-card mt-0.5"></i> {{ school_obj.registration_no|default:"—" }}</div>
+      <div class="flex gap-2"><i class="ph ph-map-pin mt-0.5"></i> {{ school_obj.address|default:"—" }}</div>
+      <div class="flex gap-2"><i class="ph ph-phone mt-0.5"></i> {{ school_obj.phone|default:"—" }}</div>
+      <div class="flex gap-2"><i class="ph ph-envelope mt-0.5"></i> {{ school_obj.email|default:"—" }}</div>
+      <div class="flex gap-2"><i class="ph ph-globe mt-0.5"></i> {{ school_obj.website|default:"—" }}</div>
+      <div class="flex gap-2"><i class="ph ph-currency-circle-dollar mt-0.5"></i> {{ school_obj.currency }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

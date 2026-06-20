@@ -1,0 +1,38 @@
+{% extends "dashboard_base.html" %}
+{% block title %}System Users{% endblock %}
+{% block page_title %}System Users{% endblock %}
+{% block topbar_actions %}
+<a href="/api/users/add/" data-testid="add-user-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Add User</a>
+{% endblock %}
+{% block content %}
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="users-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Username</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Full Name</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Email</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Role</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for u in users %}
+      <tr>
+        <td class="px-6 py-4 text-sm font-mono">{{ u.username }}</td>
+        <td class="px-6 py-4 text-sm font-medium text-zinc-900">{{ u.display_name }}</td>
+        <td class="px-6 py-4 text-sm">{{ u.email|default:"—" }}</td>
+        <td class="px-6 py-4 text-sm">{{ u.get_role_display }}{% if u.is_superuser %} <span class="text-xs text-blue-600">(superuser)</span>{% endif %}</td>
+        <td class="px-6 py-4">
+          {% if u.is_active %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Active</span>
+          {% else %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200">Disabled</span>{% endif %}
+        </td>
+        <td class="px-6 py-4 text-right text-sm">
+          <a href="/api/users/{{ u.id }}/edit/" class="text-zinc-700 hover:text-blue-600">Edit</a>
+          {% if u != request.user %}<a href="/api/users/{{ u.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">No users.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

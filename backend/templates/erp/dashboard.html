@@ -1,0 +1,129 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+
+{% block title %}Dashboard{% endblock %}
+{% block crumb %}Overview{% endblock %}
+{% block page_title %}Welcome back, {{ user.display_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- KPIs -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-5" data-testid="dashboard-kpis">
+    {% include "_kpi.html" with label="Active Students" value=kpis.students icon="ph-student" tone="blue" tid="kpi-students" %}
+    {% include "_kpi.html" with label="Teachers" value=kpis.teachers icon="ph-chalkboard-teacher" tone="emerald" tid="kpi-teachers" %}
+    {% include "_kpi.html" with label="Classes" value=kpis.classes icon="ph-buildings" tone="amber" tid="kpi-classes" %}
+    {% include "_kpi.html" with label="Staff" value=kpis.employees icon="ph-users-three" tone="purple" tid="kpi-employees" %}
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-5">
+    <div class="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm" data-testid="kpi-fees-collected">
+      <div class="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Fees Collected (MTD)</div>
+      <div class="mt-3 text-3xl font-display font-bold tracking-tight text-zinc-900 tabular-nums">
+        {{ school.currency }} {{ kpis.fees_collected_month|floatformat:2|intcomma }}
+      </div>
+      <div class="mt-2 inline-flex items-center text-xs font-medium text-emerald-700"><i class="ph ph-trend-up mr-1"></i> Live</div>
+    </div>
+    <div class="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm" data-testid="kpi-outstanding">
+      <div class="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Outstanding Fees</div>
+      <div class="mt-3 text-3xl font-display font-bold tracking-tight text-zinc-900 tabular-nums">
+        {{ school.currency }} {{ kpis.outstanding_balance|floatformat:2|intcomma }}
+      </div>
+      <div class="mt-2 inline-flex items-center text-xs font-medium text-amber-700"><i class="ph ph-warning mr-1"></i> Across active invoices</div>
+    </div>
+    <div class="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm" data-testid="kpi-donations">
+      <div class="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Donations (MTD)</div>
+      <div class="mt-3 text-3xl font-display font-bold tracking-tight text-zinc-900 tabular-nums">
+        {{ school.currency }} {{ kpis.donations_month|floatformat:2|intcomma }}
+      </div>
+      <div class="mt-2 inline-flex items-center text-xs font-medium text-blue-700"><i class="ph ph-heart mr-1"></i> Thank our donors</div>
+    </div>
+    <div class="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm" data-testid="kpi-expenses">
+      <div class="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Expenses (MTD)</div>
+      <div class="mt-3 text-3xl font-display font-bold tracking-tight text-zinc-900 tabular-nums">
+        {{ school.currency }} {{ kpis.expenses_month|floatformat:2|intcomma }}
+      </div>
+    </div>
+    <div class="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm" data-testid="kpi-salary-pending">
+      <div class="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Salaries Pending</div>
+      <div class="mt-3 text-3xl font-display font-bold tracking-tight text-zinc-900 tabular-nums">
+        {{ school.currency }} {{ kpis.salary_pending|floatformat:2|intcomma }}
+      </div>
+    </div>
+    <div class="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm" data-testid="kpi-pending-leaves">
+      <div class="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Pending Leave Requests</div>
+      <div class="mt-3 text-3xl font-display font-bold tracking-tight text-zinc-900 tabular-nums">{{ kpis.pending_leaves }}</div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="bg-white rounded-lg border border-zinc-200 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display font-semibold text-zinc-900">Quick actions</h3>
+      <span class="text-xs text-zinc-500">Common operational tasks</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+      <a href="/api/students/add/" data-testid="quick-admit-student" class="rounded-md border border-zinc-200 hover:border-blue-600 hover:bg-blue-50 transition-colors px-4 py-3 flex items-center gap-3"><i class="ph-bold ph-user-plus text-blue-600"></i> Admit a student</a>
+      <a href="/api/invoices/add/" data-testid="quick-create-invoice" class="rounded-md border border-zinc-200 hover:border-blue-600 hover:bg-blue-50 transition-colors px-4 py-3 flex items-center gap-3"><i class="ph-bold ph-file-plus text-blue-600"></i> Create invoice</a>
+      <a href="/api/salaries/add/" data-testid="quick-add-salary" class="rounded-md border border-zinc-200 hover:border-blue-600 hover:bg-blue-50 transition-colors px-4 py-3 flex items-center gap-3"><i class="ph-bold ph-money text-blue-600"></i> Record salary</a>
+      <a href="/api/donations/add/" data-testid="quick-add-donation" class="rounded-md border border-zinc-200 hover:border-blue-600 hover:bg-blue-50 transition-colors px-4 py-3 flex items-center gap-3"><i class="ph-bold ph-hand-coins text-blue-600"></i> Record donation</a>
+    </div>
+  </div>
+
+  <!-- Recent activity -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+        <h3 class="font-display font-semibold">Recent Payments</h3>
+        <a href="/api/invoices/" class="text-xs text-blue-600 hover:underline">View all</a>
+      </div>
+      <ul class="divide-y divide-zinc-100">
+        {% for p in recent_payments %}
+        <li class="px-5 py-3 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-zinc-900">{{ p.invoice.student.full_name }}</div>
+            <div class="text-xs text-zinc-500">{{ p.paid_on|naturalday }} · {{ p.get_method_display }}</div>
+          </div>
+          <div class="text-sm font-semibold tabular-nums text-emerald-700">+{{ school.currency }} {{ p.amount|floatformat:2|intcomma }}</div>
+        </li>
+        {% empty %}<li class="px-5 py-6 text-sm text-zinc-500">No payments recorded yet.</li>{% endfor %}
+      </ul>
+    </div>
+
+    <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+        <h3 class="font-display font-semibold">Recent Expenses</h3>
+        <a href="/api/expenses/" class="text-xs text-blue-600 hover:underline">View all</a>
+      </div>
+      <ul class="divide-y divide-zinc-100">
+        {% for e in recent_expenses %}
+        <li class="px-5 py-3 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-zinc-900">{{ e.title }}</div>
+            <div class="text-xs text-zinc-500">{{ e.date|naturalday }} · {{ e.get_category_display }}</div>
+          </div>
+          <div class="text-sm font-semibold tabular-nums text-red-700">-{{ school.currency }} {{ e.amount|floatformat:2|intcomma }}</div>
+        </li>
+        {% empty %}<li class="px-5 py-6 text-sm text-zinc-500">No expenses recorded yet.</li>{% endfor %}
+      </ul>
+    </div>
+
+    <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+        <h3 class="font-display font-semibold">Recent Donations</h3>
+        <a href="/api/donations/" class="text-xs text-blue-600 hover:underline">View all</a>
+      </div>
+      <ul class="divide-y divide-zinc-100">
+        {% for d in recent_donations %}
+        <li class="px-5 py-3 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-zinc-900">{{ d.donor.name }}</div>
+            <div class="text-xs text-zinc-500">{{ d.date|naturalday }} · {{ d.get_purpose_display }}</div>
+          </div>
+          <div class="text-sm font-semibold tabular-nums text-blue-700">+{{ school.currency }} {{ d.amount|floatformat:2|intcomma }}</div>
+        </li>
+        {% empty %}<li class="px-5 py-6 text-sm text-zinc-500">No donations yet.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Leave Requests{% endblock %}
+{% block page_title %}Leave Requests{% endblock %}
+{% block topbar_actions %}
+<a href="/api/leaves/add/" data-testid="add-leave-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Submit Leave</a>
+{% endblock %}
+{% block content %}
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="leaves-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Employee</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Type</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Dates</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Days</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Reason</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for l in objects %}
+      <tr>
+        <td class="px-6 py-4 text-sm font-medium">{{ l.employee.full_name }}</td>
+        <td class="px-6 py-4 text-sm">{{ l.get_leave_type_display }}</td>
+        <td class="px-6 py-4 text-sm">{{ l.start_date }} → {{ l.end_date }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums">{{ l.days }}</td>
+        <td class="px-6 py-4 text-sm text-zinc-600 max-w-xs truncate">{{ l.reason|default:"—" }}</td>
+        <td class="px-6 py-4">
+          {% if l.status == 'approved' %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Approved</span>
+          {% elif l.status == 'rejected' %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">Rejected</span>
+          {% else %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">Pending</span>{% endif %}
+        </td>
+        <td class="px-6 py-4 text-right text-sm">
+          {% if l.status == 'pending' %}
+            <a href="/api/leaves/{{ l.id }}/decision/approved/" data-testid="approve-leave-{{ l.id }}" class="text-emerald-700 hover:underline">Approve</a>
+            <a href="/api/leaves/{{ l.id }}/decision/rejected/" data-testid="reject-leave-{{ l.id }}" class="ml-3 text-red-700 hover:underline">Reject</a>
+          {% endif %}
+          <a href="/api/leaves/{{ l.id }}/edit/" class="ml-3 text-zinc-700 hover:text-blue-600">Edit</a>
+          <a href="/api/leaves/{{ l.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="px-6 py-12 text-center text-sm text-zinc-500">No leave requests.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

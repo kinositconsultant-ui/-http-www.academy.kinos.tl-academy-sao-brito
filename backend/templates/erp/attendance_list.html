@@ -1,0 +1,38 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Attendance{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+{% block topbar_actions %}
+<a href="/api/attendance/add/" data-testid="add-attendance-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Mark Attendance</a>
+{% endblock %}
+{% block content %}
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="attendance-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Date</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Student</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Note</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for a in objects %}
+      <tr>
+        <td class="px-6 py-4 text-sm">{{ a.date }}</td>
+        <td class="px-6 py-4 text-sm font-medium text-zinc-900">{{ a.student.full_name }}</td>
+        <td class="px-6 py-4">
+          {% if a.status == 'present' %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Present</span>
+          {% elif a.status == 'absent' %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">Absent</span>
+          {% elif a.status == 'late' %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">Late</span>
+          {% else %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">Excused</span>{% endif %}
+        </td>
+        <td class="px-6 py-4 text-sm text-zinc-600">{{ a.note|default:"—" }}</td>
+        <td class="px-6 py-4 text-right text-sm">
+          <a href="/api/attendance/{{ a.id }}/edit/" class="text-zinc-700 hover:text-blue-600">Edit</a>
+          <a href="/api/attendance/{{ a.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-zinc-500">No attendance records.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% load humanize %}
+<div class="bg-white border border-zinc-200 rounded-lg p-6 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200" data-testid="{{ tid }}">
+  <div class="flex items-start justify-between">
+    <div class="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">{{ label }}</div>
+    <span class="inline-flex h-8 w-8 items-center justify-center rounded-md
+      {% if tone == 'blue' %}bg-blue-50 text-blue-600
+      {% elif tone == 'emerald' %}bg-emerald-50 text-emerald-600
+      {% elif tone == 'amber' %}bg-amber-50 text-amber-600
+      {% elif tone == 'purple' %}bg-violet-50 text-violet-600
+      {% else %}bg-zinc-100 text-zinc-600{% endif %}">
+      <i class="ph-bold {{ icon }}"></i>
+    </span>
+  </div>
+  <div class="mt-3 text-3xl font-display font-bold tracking-tight text-zinc-900 tabular-nums">{{ value|intcomma }}</div>
+</div>

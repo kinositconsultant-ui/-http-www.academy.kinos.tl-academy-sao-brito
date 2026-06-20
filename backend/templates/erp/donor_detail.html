@@ -1,0 +1,42 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}{{ donor.name }}{% endblock %}
+{% block page_title %}{{ donor.name }}{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="bg-white border border-zinc-200 rounded-lg p-6">
+    <div class="text-[11px] uppercase tracking-widest text-zinc-500">Donor Profile</div>
+    <h2 class="mt-2 font-display text-2xl font-bold text-zinc-900">{{ donor.name }}</h2>
+    {% if donor.organization %}<div class="text-sm text-zinc-600">{{ donor.organization }}</div>{% endif %}
+    <div class="mt-6 space-y-2 text-sm">
+      <div><span class="text-zinc-500">Email:</span> {{ donor.email|default:"—" }}</div>
+      <div><span class="text-zinc-500">Phone:</span> {{ donor.phone|default:"—" }}</div>
+      <div><span class="text-zinc-500">Address:</span> {{ donor.address|default:"—" }}</div>
+    </div>
+    <div class="mt-6 pt-6 border-t border-zinc-200">
+      <div class="text-xs uppercase tracking-wider text-zinc-500">Lifetime Donations</div>
+      <div class="text-3xl font-display font-bold tabular-nums text-blue-700">{{ school.currency }} {{ donor.total_donated|floatformat:2|intcomma }}</div>
+    </div>
+  </div>
+
+  <div class="lg:col-span-2 bg-white border border-zinc-200 rounded-lg overflow-hidden">
+    <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
+      <h3 class="font-display font-semibold">Donations</h3>
+      <a href="/api/donations/add/" class="text-xs text-blue-600 hover:underline">+ Record Donation</a>
+    </div>
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Date</th><th class="px-5 py-2 text-left">Purpose</th>
+        <th class="px-5 py-2 text-left">Receipt</th><th class="px-5 py-2 text-right">Amount</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for d in donor.donations.all %}
+        <tr><td class="px-5 py-3">{{ d.date }}</td><td class="px-5 py-3">{{ d.get_purpose_display }}</td>
+          <td class="px-5 py-3 font-mono">{{ d.receipt_no|default:"—" }}</td>
+          <td class="px-5 py-3 text-right tabular-nums text-blue-700">{{ d.amount|floatformat:2|intcomma }}</td></tr>
+        {% empty %}<tr><td colspan="4" class="px-5 py-6 text-center text-zinc-500">No donations yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

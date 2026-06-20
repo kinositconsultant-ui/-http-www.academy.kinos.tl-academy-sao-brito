@@ -1,0 +1,56 @@
+{
+  "summary": "Frontend-only end-to-end test of the Django Academy/Finance/HR ERP. Login (valid + invalid), dashboard KPIs + header, sidebar nav, all 18 list pages, students create+search+detail, class create+persist, school profile load+save, salary 'Mark Paid' -> Expense auto-create, leave approve, users page, logout, Django admin reachable, finance report (YTD income/expenses/net/donations/categories), and invoice payment flow tested. 2 bugs found: (1) /api/invoices/ returned 500 due to malformed template tag (FIXED in template), (2) Recording a payment on an invoice does NOT persist (form keeps amount_paid at 0) - likely because FeePaymentForm exposes the 'invoice' field but the view sets it programmatically, so form validation fails silently. Several minor data-testid naming mismatches vs spec.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/invoices/", "issue": "Returned HTTP 500 (ValueError: Need 2 values to unpack in for loop) due to a stray `{% for s,label in 'all,All|...'|cut:' '|slice:'' %}` template tag in templates/erp/invoice_list.html (line 10). The iterable evaluates to a string of characters, so each item is 1 char and cannot unpack into (s,label). FIXED by removing the dead loop line. Backend was restarted. Page now returns 200.", "priority": "CRITICAL"},
+      {"endpoint": "/api/invoices/<id>/ (POST Record Payment)", "issue": "Submitting the payment form on an unpaid invoice (e.g. id=2, balance=850.00) with amount=850 does NOT persist. After POST the page re-renders the same invoice with amount_paid still 0.00 and no 'Fully Paid' indicator. The view's redirect to invoice_detail isn't reached -> form.is_valid() is False. ROOT CAUSE: FeePaymentForm (erp/forms.py:71) only does exclude=['received_by'], so the `invoice` FK field is still rendered + required. The invoice_detail.html loops over all form fields and the template does include the invoice <select>, but Django's `form.is_valid()` requires the user to pick one. Since `payment.invoice = invoice` is only set after .is_valid(), the form silently fails when invoice isn't selected. Fix: add 'invoice' to FeePaymentForm.Meta.exclude (also 'received_by'), OR set initial={'invoice': invoice} in the view, OR hide the invoice field in the template.", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "/api/reports/finance/", "issue": "Income by Source breakdown shows only 'Donation' even though fee-payment income rows exist on /api/incomes/. Worth verifying Income.source choices align with the report's group_by key (e.g., 'fees' vs 'Fees Collected')."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LoginPage (templates/accounts/login.html)", "issue": "Branding panel shows 'Academy ERP' instead of the requested school name 'Instituto São João de Brito'. School name only appears after login (sidebar/header). The login screen should also surface the configured school name.", "selector": "left-brand panel on /api/login/", "priority": "LOW"},
+      {"component": "InvoiceDetail payment form", "issue": "The 'Invoice' select is rendered in the payment form even though it is conceptually fixed by the URL. This both causes silent validation failure AND is confusing UX.", "selector": "[data-testid=payment-form] select[name=invoice]", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Record Payment on Invoice", "issue": "Payment submission silently fails -> amount_paid not updated, status not changed, Income ledger row not created (for THIS new payment). Existing seeded incomes are unaffected.", "affected_selectors": ["[data-testid=record-payment-btn]", "[data-testid=payment-form] input[name=amount]"]}
+    ],
+    "design_issues": [
+      {"screen": "All pages", "issues": ["cdn.tailwindcss.com used in production (console warning on every page). Should be replaced with a built Tailwind asset for performance/CSP, but not blocking."]},
+      {"screen": "Sidebar data-testid naming", "issues": [
+        "Spec asked for data-testid='nav-academic-years' but template uses 'nav-years'.",
+        "Spec asked for data-testid='nav-school-profile' but template uses 'nav-school'.",
+        "Spec asked for data-testid='nav-logout' — sidebar uses a standalone 'logout-btn' (which works); there is no nav-logout. Either rename, or add an alias to match the spec/test contract."
+      ]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "[HIGH] Fix FeePaymentForm so the payment POST actually persists: set Meta.exclude = ['received_by','invoice'] (or hide the field in invoice_detail.html and inject it server-side). Re-test that amount_paid increments, status flips to 'paid' on full payment, and an Income row is created.",
+    "[HIGH] Investigate Income.source='fees' so /api/reports/finance/ Income-by-Source breakdown surfaces fee income alongside donations.",
+    "[MEDIUM] Rename sidebar data-testids to match spec: nav-years -> nav-academic-years, nav-school -> nav-school-profile, add nav-logout (or update the spec/test contract).",
+    "[LOW] Use the configured School.name on the login page brand panel so 'Instituto São João de Brito' appears pre-login.",
+    "[LOW] Replace cdn.tailwindcss.com with a built Tailwind asset to silence the production warning."
+  ],
+  "critical_code_review_comments": [
+    "templates/erp/invoice_list.html line 10 contained dead/broken template code (`{% for s,label in 'all,All|...'|cut:' '|slice:'' %}{% endfor %}`) that caused a 500. Removed.",
+    "erp/forms.py FeePaymentForm should not expose the `invoice` FK when the URL already binds it (silent validation failure).",
+    "erp/views.py invoice_detail() should at minimum render form errors visibly (template loop renders {{ field.errors }} but the failure was invisible to the user — no top-of-form non-field error summary).",
+    "Tailwind via CDN script tag in dashboard_base.html will be flagged by browser consoles in production."
+  ],
+  "updated_files": [
+    "/app/backend/templates/erp/invoice_list.html (removed broken {% for %} on line 10)"
+  ],
+  "success_rate": {"backend": "n/a (frontend-only run)", "frontend": "~85% (login, dashboard, all list pages, students/class CRUD, school profile, salary pay, leave approve, logout, admin all work; invoice payment + finance-report income-by-source broken)"},
+  "test_credentials": "admin / admin123 (used). Also seeded: accountant/password123, hr/password123, principal/password123",
+  "seed_data_creation": "Created one class via UI: name='TEST_Class_Z' section='Z' (persisted, visible in /api/classes/). No cleanup performed.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Invoice list 500 bug is already fixed in templates/erp/invoice_list.html. The remaining critical bug is in erp/forms.py FeePaymentForm – the `invoice` field must be excluded so payments submitted from /api/invoices/<id>/ actually persist. To repro: login admin/admin123 -> /api/invoices/?status=pending -> open first invoice -> fill amount with balance -> click Record Payment. Currently page reloads with no change. Once fixed, verify (a) amount_paid updates, (b) status flips to 'paid' on full payment, (c) Income row auto-created, (d) /api/reports/finance/ Income-by-Source shows fee income too.",
+  "rca_of_the_issues": {
+    "/api/invoices/ 500": "templates/erp/invoice_list.html line 10 had `{% for s,label in 'all,All|pending,Pending|partial,Partial|paid,Paid|overdue,Overdue'|cut:' '|slice:'' %}{% endfor %}`. The `|slice:''` returns the original string; iterating yields single characters; Django can't unpack into (s,label). Removed the line — only static <a> chips below are needed. Fix verified after `sudo supervisorctl restart backend` (Django was still holding the cached template compile error in the process).",
+    "Record Payment silently fails": "erp/forms.py FeePaymentForm Meta exclude=['received_by'] but NOT 'invoice'. The form therefore requires the user to pick an invoice, even though the view fixes it from the URL via `payment.invoice = invoice` AFTER `.is_valid()`. Fix: exclude 'invoice' too (or hide the field). Mitigation: also show non_field errors on the page so silent failures don't happen."
+  }
+}

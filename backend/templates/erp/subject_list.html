@@ -1,0 +1,31 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Subjects{% endblock %}
+{% block page_title %}Subjects{% endblock %}
+{% block topbar_actions %}
+<a href="/api/subjects/add/" data-testid="add-subject-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Add Subject</a>
+{% endblock %}
+{% block content %}
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="subjects-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Code</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Name</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Class</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for s in objects %}
+      <tr>
+        <td class="px-6 py-4 text-sm font-mono">{{ s.code }}</td>
+        <td class="px-6 py-4 text-sm font-medium text-zinc-900">{{ s.name }}</td>
+        <td class="px-6 py-4 text-sm text-zinc-700">{{ s.school_class|default:"—" }}</td>
+        <td class="px-6 py-4 text-right text-sm">
+          <a href="/api/subjects/{{ s.id }}/edit/" class="text-zinc-700 hover:text-blue-600">Edit</a>
+          <a href="/api/subjects/{{ s.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="px-6 py-12 text-center text-sm text-zinc-500">No subjects.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

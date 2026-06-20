@@ -1,0 +1,347 @@
+from django.db import models
+from django.conf import settings
+
+
+# ---------- Academy ----------
+
+class AcademicYear(models.Model):
+    name = models.CharField(max_length=50, unique=True)  # 2025-2026
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_current = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+
+class SchoolClass(models.Model):
+    name = models.CharField(max_length=80)  # Grade 10
+    section = models.CharField(max_length=10, blank=True)  # A / B
+    level = models.CharField(max_length=40, blank=True)  # Primary / Secondary
+    capacity = models.PositiveIntegerField(default=40)
+
+    class Meta:
+        ordering = ["name", "section"]
+        unique_together = ("name", "section")
+
+    def __str__(self):
+        return f"{self.name}{(' - ' + self.section) if self.section else ''}"
+
+
+class Subject(models.Model):
+    name = models.CharField(max_length=80)
+    code = models.CharField(max_length=20, unique=True)
+    school_class = models.ForeignKey(SchoolClass, on_delete=models.SET_NULL,
+                                     null=True, blank=True, related_name="subjects")
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class Student(models.Model):
+    GENDER_CHOICES = [("M", "Male"), ("F", "Female"), ("O", "Other")]
+
+    admission_no = models.CharField(max_length=30, unique=True)
+    first_name = models.CharField(max_length=80)
+    last_name = models.CharField(max_length=80)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, default="M")
+    date_of_birth = models.DateField(null=True, blank=True)
+    school_class = models.ForeignKey(SchoolClass, on_delete=models.SET_NULL,
+                                     null=True, blank=True, related_name="students")
+    parent_name = models.CharField(max_length=120, blank=True)
+    parent_phone = models.CharField(max_length=30, blank=True)
+    parent_email = models.EmailField(blank=True)
+    address = models.TextField(blank=True)
+    enrollment_date = models.DateField(auto_now_add=True)
+    photo = models.ImageField(upload_to="students/", blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-id"]
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def __str__(self):
+        return f"{self.full_name} [{self.admission_no}]"
+
+
+class Teacher(models.Model):
+    employee_no = models.CharField(max_length=30, unique=True)
+    first_name = models.CharField(max_length=80)
+    last_name = models.CharField(max_length=80)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    qualification = models.CharField(max_length=120, blank=True)
+    specialization = models.CharField(max_length=120, blank=True)
+    hire_date = models.DateField(null=True, blank=True)
+    monthly_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    subjects = models.ManyToManyField(Subject, blank=True, related_name="teachers")
+    photo = models.ImageField(upload_to="teachers/", blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-id"]
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def __str__(self):
+        return f"{self.full_name} [{self.employee_no}]"
+
+
+class Attendance(models.Model):
+    STATUS_CHOICES = [
+        ("present", "Present"),
+        ("absent", "Absent"),
+        ("late", "Late"),
+        ("excused", "Excused"),
+    ]
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="attendance")
+    date = models.DateField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="present")
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        unique_together = ("student", "date")
+        ordering = ["-date"]
+
+
+class Grade(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="grades")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="grades")
+    exam_name = models.CharField(max_length=80)  # Midterm, Final, etc.
+    score = models.DecimalField(max_digits=6, decimal_places=2)
+    total = models.DecimalField(max_digits=6, decimal_places=2, default=100)
+    recorded_at = models.DateField(auto_now_add=True)
+
+    @property
+    def percentage(self):
+        try:
+            return round((float(self.score) / float(self.total)) * 100, 2)
+        except (ZeroDivisionError, TypeError):
+            return 0
+
+    @property
+    def letter(self):
+        p = self.percentage
+        if p >= 90:
+            return "A"
+        if p >= 80:
+            return "B"
+        if p >= 70:
+            return "C"
+        if p >= 60:
+            return "D"
+        return "F"
+
+    class Meta:
+        ordering = ["-recorded_at"]
+
+
+# ---------- Finance ----------
+
+class FeeStructure(models.Model):
+    FREQUENCY = [("monthly", "Monthly"), ("term", "Per Term"), ("annual", "Annual")]
+    name = models.CharField(max_length=120)
+    school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name="fee_structures")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    frequency = models.CharField(max_length=20, choices=FREQUENCY, default="term")
+
+    def __str__(self):
+        return f"{self.name} - {self.school_class} ({self.amount})"
+
+
+class FeeInvoice(models.Model):
+    STATUS = [("pending", "Pending"), ("paid", "Paid"),
+              ("partial", "Partial"), ("overdue", "Overdue")]
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="invoices")
+    title = models.CharField(max_length=120)  # Tuition - Term 1
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    due_date = models.DateField()
+    issued_date = models.DateField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS, default="pending")
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-issued_date"]
+
+    @property
+    def balance(self):
+        return (self.amount or 0) - (self.amount_paid or 0)
+
+    def refresh_status(self):
+        if self.amount_paid >= self.amount:
+            self.status = "paid"
+        elif self.amount_paid > 0:
+            self.status = "partial"
+        else:
+            from django.utils.timezone import now
+            self.status = "overdue" if self.due_date < now().date() else "pending"
+
+
+class FeePayment(models.Model):
+    METHOD = [("cash", "Cash"), ("bank", "Bank Transfer"),
+              ("card", "Card"), ("mobile", "Mobile Money"), ("other", "Other")]
+    invoice = models.ForeignKey(FeeInvoice, on_delete=models.CASCADE, related_name="payments")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=20, choices=METHOD, default="cash")
+    reference = models.CharField(max_length=120, blank=True)
+    paid_on = models.DateField()
+    received_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True)
+
+    class Meta:
+        ordering = ["-paid_on"]
+
+
+class SalaryPayment(models.Model):
+    STATUS = [("pending", "Pending"), ("paid", "Paid")]
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="salary_payments")
+    month = models.CharField(max_length=20)  # "Jan 2026"
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    bonus = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    paid_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS, default="pending")
+    note = models.CharField(max_length=200, blank=True)
+
+    @property
+    def net(self):
+        return (self.amount or 0) + (self.bonus or 0) - (self.deductions or 0)
+
+    class Meta:
+        ordering = ["-id"]
+
+
+class Expense(models.Model):
+    CATEGORY = [
+        ("utilities", "Utilities"), ("supplies", "Supplies"),
+        ("maintenance", "Maintenance"), ("transport", "Transport"),
+        ("marketing", "Marketing"), ("food", "Food/Cafeteria"),
+        ("other", "Other"),
+    ]
+    title = models.CharField(max_length=200)
+    category = models.CharField(max_length=20, choices=CATEGORY, default="other")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    paid_to = models.CharField(max_length=200, blank=True)
+    date = models.DateField()
+    note = models.TextField(blank=True)
+    receipt = models.FileField(upload_to="receipts/", blank=True, null=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True)
+
+    class Meta:
+        ordering = ["-date"]
+
+
+class Income(models.Model):
+    SOURCE = [
+        ("fees", "Tuition Fees"), ("donation", "Donation"),
+        ("grant", "Grant"), ("event", "Event"),
+        ("other", "Other"),
+    ]
+    title = models.CharField(max_length=200)
+    source = models.CharField(max_length=20, choices=SOURCE, default="other")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    date = models.DateField()
+    note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-date"]
+
+
+# ---------- Donors ----------
+
+class Donor(models.Model):
+    name = models.CharField(max_length=200)
+    organization = models.CharField(max_length=200, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    address = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-id"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def total_donated(self):
+        return sum((d.amount for d in self.donations.all()), 0)
+
+
+class Donation(models.Model):
+    PURPOSE = [
+        ("general", "General Support"), ("scholarship", "Scholarship Fund"),
+        ("infrastructure", "Infrastructure"), ("books", "Books & Supplies"),
+        ("events", "Events"),
+    ]
+    donor = models.ForeignKey(Donor, on_delete=models.CASCADE, related_name="donations")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    purpose = models.CharField(max_length=20, choices=PURPOSE, default="general")
+    date = models.DateField()
+    receipt_no = models.CharField(max_length=50, blank=True)
+    note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-date"]
+
+
+# ---------- HR ----------
+
+class Employee(models.Model):
+    DEPARTMENT = [
+        ("academics", "Academics"), ("admin", "Administration"),
+        ("finance", "Finance"), ("hr", "Human Resources"),
+        ("maintenance", "Maintenance"), ("it", "IT"),
+        ("other", "Other"),
+    ]
+    employee_no = models.CharField(max_length=30, unique=True)
+    first_name = models.CharField(max_length=80)
+    last_name = models.CharField(max_length=80)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    designation = models.CharField(max_length=120)
+    department = models.CharField(max_length=20, choices=DEPARTMENT, default="other")
+    hire_date = models.DateField(null=True, blank=True)
+    salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-id"]
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def __str__(self):
+        return f"{self.full_name} [{self.employee_no}]"
+
+
+class LeaveRequest(models.Model):
+    TYPE = [("annual", "Annual"), ("sick", "Sick"),
+            ("maternity", "Maternity"), ("unpaid", "Unpaid"), ("other", "Other")]
+    STATUS = [("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")]
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="leaves")
+    leave_type = models.CharField(max_length=20, choices=TYPE, default="annual")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS, default="pending")
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                   null=True, blank=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def days(self):
+        return (self.end_date - self.start_date).days + 1

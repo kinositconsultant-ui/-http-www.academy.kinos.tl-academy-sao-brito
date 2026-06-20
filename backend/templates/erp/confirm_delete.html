@@ -1,0 +1,29 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Confirm Delete{% endblock %}
+{% block page_title %}Confirm Deletion{% endblock %}
+
+{% block content %}
+<div class="max-w-xl bg-white rounded-lg border border-zinc-200 p-8">
+  <div class="flex items-center gap-3 mb-4">
+    <div class="h-10 w-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+      <i class="ph-bold ph-trash text-xl"></i>
+    </div>
+    <h2 class="font-display text-xl font-semibold text-zinc-900">Delete {{ type|default:"item" }}?</h2>
+  </div>
+  <p class="text-sm text-zinc-600">
+    You are about to permanently delete <span class="font-semibold text-zinc-900">{{ object }}</span>.
+    This action cannot be undone.
+  </p>
+  <form method="post" class="mt-6 flex gap-3">
+    {% csrf_token %}
+    <button type="submit" data-testid="confirm-delete-btn"
+      class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
+      <i class="ph-bold ph-trash mr-2"></i> Yes, delete
+    </button>
+    <a href="javascript:history.back()" data-testid="cancel-delete-btn"
+      class="inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50">
+      Cancel
+    </a>
+  </form>
+</div>
+{% endblock %}

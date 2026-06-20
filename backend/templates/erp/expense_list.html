@@ -1,0 +1,40 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Expenses{% endblock %}
+{% block page_title %}Expenses{% endblock %}
+{% block topbar_actions %}
+<a href="/api/expenses/add/" data-testid="add-expense-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Record Expense</a>
+{% endblock %}
+{% block content %}
+<div class="mb-4 bg-white border border-zinc-200 rounded-lg px-6 py-4 inline-block">
+  <div class="text-xs uppercase tracking-wider text-zinc-500">Total Expenses</div>
+  <div class="text-2xl font-display font-bold tabular-nums">{{ school.currency }} {{ total|floatformat:2|intcomma }}</div>
+</div>
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="expenses-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Date</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Title</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Category</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Paid To</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Amount</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for e in objects %}
+      <tr>
+        <td class="px-6 py-4 text-sm">{{ e.date }}</td>
+        <td class="px-6 py-4 text-sm font-medium text-zinc-900">{{ e.title }}</td>
+        <td class="px-6 py-4 text-sm">{{ e.get_category_display }}</td>
+        <td class="px-6 py-4 text-sm">{{ e.paid_to|default:"—" }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums text-red-700">-{{ e.amount|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4 text-right text-sm">
+          <a href="/api/expenses/{{ e.id }}/edit/" class="text-zinc-700 hover:text-blue-600">Edit</a>
+          <a href="/api/expenses/{{ e.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">No expenses.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

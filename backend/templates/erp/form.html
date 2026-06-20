@@ -1,0 +1,67 @@
+{% extends "dashboard_base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block crumb %}Forms{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+  <form method="post" enctype="multipart/form-data" class="bg-white rounded-lg border border-zinc-200 p-8 space-y-6" data-testid="generic-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+      {% for field in form %}
+        <div class="{% if field.field.widget.input_type == 'textarea' or field.name == 'address' or field.name == 'notes' or field.name == 'reason' or field.name == 'note' %}md:col-span-2{% endif %}">
+          <label class="block text-sm font-medium text-zinc-700 mb-1" for="{{ field.id_for_label }}">
+            {{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
+          </label>
+          {% if field.field.widget.input_type == 'checkbox' %}
+            <div class="flex items-center gap-2">{{ field }}<span class="text-sm text-zinc-600">{{ field.help_text }}</span></div>
+          {% else %}
+            {{ field }}
+            {% if field.help_text %}<p class="mt-1 text-xs text-zinc-500">{{ field.help_text }}</p>{% endif %}
+          {% endif %}
+          {% if field.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ field.errors|join:" " }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="flex items-center gap-3 pt-4 border-t border-zinc-100">
+      <button type="submit" data-testid="form-submit-btn"
+        class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">
+        <i class="ph-bold ph-check mr-2"></i> Save
+      </button>
+      <a href="javascript:history.back()" data-testid="form-cancel-btn"
+        class="inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+
+<style>
+  form input[type=text], form input[type=email], form input[type=url], form input[type=number],
+  form input[type=date], form input[type=password], form input[type=file],
+  form select, form textarea {
+    display: block; width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 0;
+    color: #18181b;
+    font-size: 0.875rem;
+    box-shadow: 0 0 0 1px #d4d4d8 inset;
+    background: #fff;
+  }
+  form input:focus, form select:focus, form textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #2563eb inset;
+  }
+  form select[multiple] { min-height: 8rem; }
+</style>
+{% endblock %}

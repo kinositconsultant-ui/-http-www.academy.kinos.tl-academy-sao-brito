@@ -1,0 +1,34 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Fee Structures{% endblock %}
+{% block page_title %}Fee Structures{% endblock %}
+{% block topbar_actions %}
+<a href="/api/fees/structures/add/" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Add Fee Structure</a>
+{% endblock %}
+{% block content %}
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Name</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Class</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Amount</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Frequency</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for f in objects %}
+      <tr>
+        <td class="px-6 py-4 text-sm font-medium">{{ f.name }}</td>
+        <td class="px-6 py-4 text-sm">{{ f.school_class }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums">{{ school.currency }} {{ f.amount|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4 text-sm">{{ f.get_frequency_display }}</td>
+        <td class="px-6 py-4 text-right text-sm">
+          <a href="/api/fees/structures/{{ f.id }}/edit/" class="text-zinc-700 hover:text-blue-600">Edit</a>
+          <a href="/api/fees/structures/{{ f.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-zinc-500">No fee structures defined.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block body %}
+<div class="min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="fixed inset-y-0 left-0 w-64 bg-zinc-900 text-zinc-300 flex flex-col z-30">
+    <div class="h-16 flex items-center gap-3 px-5 border-b border-zinc-800">
+      <div class="h-9 w-9 rounded-md bg-blue-600 flex items-center justify-center">
+        <i class="ph-bold ph-graduation-cap text-white text-xl"></i>
+      </div>
+      <div>
+        <div class="text-white font-display font-bold leading-tight" data-testid="brand-name">{{ school.name|default:"Academy ERP" }}</div>
+        <div class="text-[10px] uppercase tracking-widest text-zinc-500">Enterprise Suite</div>
+      </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-6 text-sm">
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Overview</div>
+        {% include "_nav_item.html" with url="/api/dashboard/" label="Dashboard" icon="ph-squares-four" tid="nav-dashboard" %}
+        {% include "_nav_item.html" with url="/api/reports/finance/" label="Finance Report" icon="ph-chart-line-up" tid="nav-finance-report" %}
+      </div>
+
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Academy</div>
+        {% include "_nav_item.html" with url="/api/students/" label="Students" icon="ph-student" tid="nav-students" %}
+        {% include "_nav_item.html" with url="/api/teachers/" label="Teachers" icon="ph-chalkboard-teacher" tid="nav-teachers" %}
+        {% include "_nav_item.html" with url="/api/classes/" label="Classes" icon="ph-buildings" tid="nav-classes" %}
+        {% include "_nav_item.html" with url="/api/subjects/" label="Subjects" icon="ph-books" tid="nav-subjects" %}
+        {% include "_nav_item.html" with url="/api/attendance/" label="Attendance" icon="ph-calendar-check" tid="nav-attendance" %}
+        {% include "_nav_item.html" with url="/api/grades/" label="Grades" icon="ph-medal" tid="nav-grades" %}
+        {% include "_nav_item.html" with url="/api/years/" label="Academic Years" icon="ph-calendar-blank" tid="nav-years" %}
+      </div>
+
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Finance</div>
+        {% include "_nav_item.html" with url="/api/fees/structures/" label="Fee Structures" icon="ph-receipt" tid="nav-fee-structures" %}
+        {% include "_nav_item.html" with url="/api/invoices/" label="Invoices" icon="ph-file-text" tid="nav-invoices" %}
+        {% include "_nav_item.html" with url="/api/salaries/" label="Teacher Salaries" icon="ph-money" tid="nav-salaries" %}
+        {% include "_nav_item.html" with url="/api/expenses/" label="Expenses" icon="ph-arrow-circle-down" tid="nav-expenses" %}
+        {% include "_nav_item.html" with url="/api/incomes/" label="Incomes" icon="ph-arrow-circle-up" tid="nav-incomes" %}
+        {% include "_nav_item.html" with url="/api/donors/" label="Donors" icon="ph-heart" tid="nav-donors" %}
+        {% include "_nav_item.html" with url="/api/donations/" label="Donations" icon="ph-hand-coins" tid="nav-donations" %}
+      </div>
+
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Human Resources</div>
+        {% include "_nav_item.html" with url="/api/employees/" label="Employees" icon="ph-users-three" tid="nav-employees" %}
+        {% include "_nav_item.html" with url="/api/leaves/" label="Leave Requests" icon="ph-airplane-tilt" tid="nav-leaves" %}
+      </div>
+
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Settings</div>
+        {% include "_nav_item.html" with url="/api/school/" label="School Profile" icon="ph-buildings" tid="nav-school" %}
+        {% if user.is_superuser or user.role == "admin" %}
+          {% include "_nav_item.html" with url="/api/users/" label="System Users" icon="ph-user-gear" tid="nav-users" %}
+        {% endif %}
+        {% include "_nav_item.html" with url="/api/admin/" label="Django Admin" icon="ph-shield-check" tid="nav-admin" %}
+      </div>
+    </nav>
+
+    <div class="border-t border-zinc-800 p-3">
+      <form action="/api/logout/" method="post">
+        {% csrf_token %}
+        <button type="submit" data-testid="logout-btn" class="w-full inline-flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">
+          <span class="flex items-center gap-2"><i class="ph ph-sign-out"></i> Sign out</span>
+          <span class="text-[10px] text-zinc-500 truncate max-w-[100px]">{{ user.username }}</span>
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 ml-64 flex flex-col min-h-screen">
+    <!-- Topbar -->
+    <header class="sticky top-0 z-20 h-16 bg-white/90 backdrop-blur-md border-b border-zinc-200 flex items-center px-8 gap-4">
+      <div class="flex-1">
+        <div class="text-[11px] uppercase tracking-widest text-zinc-500">{% block crumb %}Dashboard{% endblock %}</div>
+        <h1 class="text-lg font-display font-semibold text-zinc-900" data-testid="page-title">{% block page_title %}Overview{% endblock %}</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        {% block topbar_actions %}{% endblock %}
+        <div class="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold" title="{{ user.display_name }}">
+          {{ user.username|first|upper }}
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 px-8 py-8">
+      {% if messages %}
+        <div class="mb-6 space-y-2">
+          {% for message in messages %}
+            <div data-testid="flash-message" class="rounded-md border px-4 py-3 text-sm
+              {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
+              {% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-800
+              {% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800
+              {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-zinc-200 py-4 px-8 text-xs text-zinc-500 flex justify-between">
+      <span>© {{ school.name|default:"Academy ERP" }} · Built with Django</span>
+      <span class="font-display">v1.0 · Enterprise Edition</span>
+    </footer>
+  </div>
+</div>
+{% endblock %}

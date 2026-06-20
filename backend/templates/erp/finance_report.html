@@ -1,0 +1,42 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Finance Report{% endblock %}
+{% block crumb %}Reports{% endblock %}
+{% block page_title %}Finance Report (Year-to-Date){% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+  <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Income (YTD)</div><div class="mt-2 text-3xl font-display font-bold tabular-nums text-emerald-700">{{ school.currency }} {{ income_total|floatformat:2|intcomma }}</div></div>
+  <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Expenses (YTD)</div><div class="mt-2 text-3xl font-display font-bold tabular-nums text-red-700">{{ school.currency }} {{ expense_total|floatformat:2|intcomma }}</div></div>
+  <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Net</div><div class="mt-2 text-3xl font-display font-bold tabular-nums {% if net >= 0 %}text-emerald-700{% else %}text-red-700{% endif %}">{{ school.currency }} {{ net|floatformat:2|intcomma }}</div></div>
+  <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Outstanding Fees</div><div class="mt-2 text-3xl font-display font-bold tabular-nums">{{ school.currency }} {{ outstanding_total|floatformat:2|intcomma }}</div></div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+  <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-zinc-200"><h3 class="font-display font-semibold">Expense by Category</h3></div>
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr><th class="px-5 py-2 text-left">Category</th><th class="px-5 py-2 text-right">Total</th></tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for r in by_category %}<tr><td class="px-5 py-3 capitalize">{{ r.category }}</td><td class="px-5 py-3 text-right tabular-nums text-red-700">{{ r.total|floatformat:2|intcomma }}</td></tr>
+        {% empty %}<tr><td colspan="2" class="px-5 py-6 text-center text-zinc-500">No data.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-zinc-200"><h3 class="font-display font-semibold">Income by Source</h3></div>
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr><th class="px-5 py-2 text-left">Source</th><th class="px-5 py-2 text-right">Total</th></tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for r in by_source %}<tr><td class="px-5 py-3 capitalize">{{ r.source }}</td><td class="px-5 py-3 text-right tabular-nums text-emerald-700">{{ r.total|floatformat:2|intcomma }}</td></tr>
+        {% empty %}<tr><td colspan="2" class="px-5 py-6 text-center text-zinc-500">No data.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mt-6 grid grid-cols-2 gap-5">
+  <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Total Donations (YTD)</div><div class="mt-2 text-2xl font-display font-bold tabular-nums text-blue-700">{{ school.currency }} {{ donation_total|floatformat:2|intcomma }}</div></div>
+  <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Total Paid Salaries</div><div class="mt-2 text-2xl font-display font-bold tabular-nums">{{ school.currency }} {{ salary_total|floatformat:2|intcomma }}</div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Salaries{% endblock %}
+{% block page_title %}Teacher Salaries{% endblock %}
+{% block topbar_actions %}
+<a href="/api/salaries/add/" data-testid="add-salary-btn" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><i class="ph-bold ph-plus mr-2"></i> Add Salary Payment</a>
+{% endblock %}
+{% block content %}
+<div class="overflow-x-auto ring-1 ring-zinc-200 rounded-lg shadow-sm bg-white">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="salaries-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Teacher</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Month</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Base</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Bonus</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Deductions</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Net</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for s in objects %}
+      <tr>
+        <td class="px-6 py-4 text-sm font-medium">{{ s.teacher.full_name }}</td>
+        <td class="px-6 py-4 text-sm">{{ s.month }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums">{{ s.amount|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums text-emerald-700">{{ s.bonus|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums text-red-700">{{ s.deductions|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4 text-sm text-right tabular-nums font-bold">{{ s.net|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-4">
+          {% if s.status == 'paid' %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Paid {{ s.paid_date }}</span>
+          {% else %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">Pending</span>{% endif %}
+        </td>
+        <td class="px-6 py-4 text-right text-sm">
+          {% if s.status != 'paid' %}<form method="post" action="/api/salaries/{{ s.id }}/pay/" class="inline">{% csrf_token %}
+            <button type="submit" data-testid="pay-salary-{{ s.id }}" class="text-emerald-700 hover:underline">Mark Paid</button>
+          </form>{% endif %}
+          <a href="/api/salaries/{{ s.id }}/edit/" class="ml-3 text-zinc-700 hover:text-blue-600">Edit</a>
+          <a href="/api/salaries/{{ s.id }}/delete/" class="ml-3 text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="8" class="px-6 py-12 text-center text-sm text-zinc-500">No salary records.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
