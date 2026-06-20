@@ -12,6 +12,30 @@
   <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Outstanding Fees</div><div class="mt-2 text-3xl font-display font-bold tabular-nums">{{ school.currency }} {{ outstanding_total|floatformat:2|intcomma }}</div></div>
 </div>
 
+<!-- Monthly cash-flow trend -->
+<div class="mt-8 bg-white rounded-lg border border-zinc-200 p-6" data-testid="finance-trend-chart">
+  <div class="flex items-center justify-between mb-1">
+    <h3 class="font-display font-semibold text-zinc-900">Cash flow — last 12 months</h3>
+    <span class="text-xs text-zinc-500">Income · Expense · Donations</span>
+  </div>
+  <p class="text-xs text-zinc-500 mb-4">Monthly totals across income, expense and donation ledgers.</p>
+  <div class="relative" style="height: 320px;"><canvas id="chart-finance-trend"></canvas></div>
+</div>
+
+<!-- Composition charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+  <div class="bg-white rounded-lg border border-zinc-200 p-6" data-testid="finance-expense-chart">
+    <h3 class="font-display font-semibold text-zinc-900 mb-1">Expenses by Category</h3>
+    <p class="text-xs text-zinc-500 mb-4">All-time breakdown.</p>
+    <div class="relative" style="height: 260px;"><canvas id="chart-expense-cat"></canvas></div>
+  </div>
+  <div class="bg-white rounded-lg border border-zinc-200 p-6" data-testid="finance-income-chart">
+    <h3 class="font-display font-semibold text-zinc-900 mb-1">Income by Source</h3>
+    <p class="text-xs text-zinc-500 mb-4">All-time breakdown.</p>
+    <div class="relative" style="height: 260px;"><canvas id="chart-income-src"></canvas></div>
+  </div>
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
   <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
     <div class="px-5 py-4 border-b border-zinc-200"><h3 class="font-display font-semibold">Expense by Category</h3></div>
@@ -39,4 +63,82 @@
   <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Total Donations (YTD)</div><div class="mt-2 text-2xl font-display font-bold tabular-nums text-blue-700">{{ school.currency }} {{ donation_total|floatformat:2|intcomma }}</div></div>
   <div class="bg-white border border-zinc-200 rounded-lg p-6"><div class="text-[11px] uppercase tracking-widest text-zinc-500">Total Paid Salaries</div><div class="mt-2 text-2xl font-display font-bold tabular-nums">{{ school.currency }} {{ salary_total|floatformat:2|intcomma }}</div></div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{{ trend_labels|json_script:"finance-trend-labels" }}
+{{ trend_income|json_script:"finance-trend-income" }}
+{{ trend_expense|json_script:"finance-trend-expense" }}
+{{ trend_donation|json_script:"finance-trend-donation" }}
+{{ cat_chart|json_script:"finance-cat-chart" }}
+{{ src_chart|json_script:"finance-src-chart" }}
+<script>
+(function () {
+  const READ = id => JSON.parse(document.getElementById(id).textContent);
+  const currency = "{{ currency_code|escapejs }}";
+  const palette = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#84cc16', '#64748b'];
+  const money = v => currency + ' ' + Number(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+  // --- Trend line (income vs expense vs donations) ---
+  new Chart(document.getElementById('chart-finance-trend'), {
+    type: 'line',
+    data: {
+      labels: READ('finance-trend-labels'),
+      datasets: [
+        {label: 'Income', data: READ('finance-trend-income'), borderColor: '#10b981',
+         backgroundColor: 'rgba(16,185,129,0.12)', tension: 0.3, borderWidth: 2, fill: true, pointRadius: 3},
+        {label: 'Expense', data: READ('finance-trend-expense'), borderColor: '#ef4444',
+         backgroundColor: 'rgba(239,68,68,0.10)', tension: 0.3, borderWidth: 2, fill: true, pointRadius: 3},
+        {label: 'Donations', data: READ('finance-trend-donation'), borderColor: '#2563eb',
+         backgroundColor: 'rgba(37,99,235,0.08)', tension: 0.3, borderWidth: 2, fill: true, pointRadius: 3},
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: {mode: 'index', intersect: false},
+      plugins: {
+        legend: {position: 'bottom', labels: {boxWidth: 12, font: {size: 11}}},
+        tooltip: {callbacks: {label: (ctx) => ` ${ctx.dataset.label}: ${money(ctx.parsed.y)}`}},
+      },
+      scales: {
+        y: {beginAtZero: true, grid: {color: '#e4e4e7'}, ticks: {callback: v => money(v)}},
+        x: {grid: {display: false}},
+      },
+    },
+  });
+
+  // --- Doughnut: Expenses by category ---
+  const catData = READ('finance-cat-chart');
+  new Chart(document.getElementById('chart-expense-cat'), {
+    type: 'doughnut',
+    data: {
+      labels: catData.map(d => d.label),
+      datasets: [{data: catData.map(d => d.total), backgroundColor: palette, borderWidth: 0}],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: {
+        legend: {position: 'right', labels: {boxWidth: 12, font: {size: 11}}},
+        tooltip: {callbacks: {label: (ctx) => ` ${ctx.label}: ${money(ctx.parsed)}`}},
+      },
+    },
+  });
+
+  // --- Doughnut: Income by source ---
+  const srcData = READ('finance-src-chart');
+  new Chart(document.getElementById('chart-income-src'), {
+    type: 'doughnut',
+    data: {
+      labels: srcData.map(d => d.label),
+      datasets: [{data: srcData.map(d => d.total), backgroundColor: palette, borderWidth: 0}],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: {
+        legend: {position: 'right', labels: {boxWidth: 12, font: {size: 11}}},
+        tooltip: {callbacks: {label: (ctx) => ` ${ctx.label}: ${money(ctx.parsed)}`}},
+      },
+    },
+  });
+})();
+</script>
 {% endblock %}

@@ -874,10 +874,46 @@ def finance_report(request):
     outstanding = FeeInvoice.objects.exclude(status="paid")
     outstanding_total = sum((inv.balance for inv in outstanding), Decimal("0"))
     # By category
-    by_category = (Expense.objects.values("category")
-                   .annotate(total=Sum("amount")).order_by("-total"))
-    by_source = (Income.objects.values("source")
-                 .annotate(total=Sum("amount")).order_by("-total"))
+    by_category = list(Expense.objects.values("category")
+                       .annotate(total=Sum("amount")).order_by("-total"))
+    by_source = list(Income.objects.values("source")
+                     .annotate(total=Sum("amount")).order_by("-total"))
+
+    # ---- Monthly trend (last 12 months) ----
+    from calendar import month_abbr
+    from datetime import date as _date
+    # Build the list of (year, month) buckets ending at this month.
+    months = []
+    y, m = today.year, today.month
+    for _ in range(12):
+        months.append((y, m))
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    months.reverse()
+    labels = [f"{month_abbr[m]} {str(y)[-2:]}" for (y, m) in months]
+
+    def _bucket(qs, date_field="date"):
+        sums = {(y, m): 0.0 for (y, m) in months}
+        for row in qs.values(date_field, "amount"):
+            d = row[date_field]
+            key = (d.year, d.month)
+            if key in sums:
+                sums[key] += float(row["amount"] or 0)
+        return [round(sums[k], 2) for k in months]
+
+    start_bucket = _date(months[0][0], months[0][1], 1)
+    income_series = _bucket(Income.objects.filter(date__gte=start_bucket))
+    expense_series = _bucket(Expense.objects.filter(date__gte=start_bucket))
+    donation_series = _bucket(Donation.objects.filter(date__gte=start_bucket))
+
+    # Friendly labels for the doughnut charts
+    expense_cat_map = dict(Expense.CATEGORY)
+    income_src_map = dict(Income.SOURCE)
+    cat_chart = [{"label": expense_cat_map.get(r["category"], r["category"]).title(),
+                  "total": float(r["total"] or 0)} for r in by_category]
+    src_chart = [{"label": income_src_map.get(r["source"], r["source"]).title(),
+                  "total": float(r["total"] or 0)} for r in by_source]
 
     return render(request, "erp/finance_report.html", {
         "income_total": income_total,
@@ -888,6 +924,14 @@ def finance_report(request):
         "net": (income_total or 0) - (expense_total or 0),
         "by_category": by_category,
         "by_source": by_source,
+        # Charts (JSON-encoded via json_script in the template)
+        "trend_labels": labels,
+        "trend_income": income_series,
+        "trend_expense": expense_series,
+        "trend_donation": donation_series,
+        "cat_chart": cat_chart,
+        "src_chart": src_chart,
+        "currency_code": (School.get_active().currency if School.get_active() else "USD"),
     })
 
 
