@@ -82,7 +82,10 @@ webpackConfig.devServer = (devServerConfig) => {
 };
 
 // Wrap with visual edits (automatically adds babel plugin, dev server, and overlay in dev mode)
-if (isDevServer) {
+// NOTE: Disabled because the wrapper uses webpack-dev-server v3 API
+// (`onAfterSetupMiddleware`) which is no longer valid; it crashes the dev server.
+// This app does not need visual-edits — the frontend is a static redirect to /api/.
+if (false && isDevServer) {
   try {
     const { withVisualEdits } = require("@emergentbase/visual-edits/craco");
     webpackConfig = withVisualEdits(webpackConfig);
