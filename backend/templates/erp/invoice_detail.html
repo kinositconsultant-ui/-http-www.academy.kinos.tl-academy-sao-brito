@@ -4,6 +4,13 @@
 {% block page_title %}Invoice #{{ invoice.id }}{% endblock %}
 {% block crumb %}Finance · Invoices{% endblock %}
 
+{% block topbar_actions %}
+<a href="/api/invoices/{{ invoice.id }}/pdf/" data-testid="download-invoice-pdf-btn"
+  class="inline-flex items-center rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800">
+  <i class="ph-bold ph-file-pdf mr-2"></i> Invoice PDF
+</a>
+{% endblock %}
+
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2 bg-white border border-zinc-200 rounded-lg p-8">
@@ -44,13 +51,22 @@
         <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
           <th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Method</th>
           <th class="px-4 py-2 text-left">Reference</th><th class="px-4 py-2 text-right">Amount</th>
+          <th class="px-4 py-2 text-right">Receipt</th>
         </tr></thead>
         <tbody class="divide-y divide-zinc-100">
           {% for p in payments %}
           <tr><td class="px-4 py-2">{{ p.paid_on }}</td><td class="px-4 py-2">{{ p.get_method_display }}</td>
             <td class="px-4 py-2 font-mono">{{ p.reference|default:"—" }}</td>
-            <td class="px-4 py-2 text-right tabular-nums text-emerald-700">{{ p.amount|floatformat:2|intcomma }}</td></tr>
-          {% empty %}<tr><td colspan="4" class="px-4 py-6 text-center text-zinc-500">No payments yet.</td></tr>{% endfor %}
+            <td class="px-4 py-2 text-right tabular-nums text-emerald-700">{{ p.amount|floatformat:2|intcomma }}</td>
+            <td class="px-4 py-2 text-right">
+              <a href="/api/payments/{{ p.id }}/receipt.pdf"
+                data-testid="receipt-pdf-{{ p.id }}"
+                class="inline-flex items-center text-xs text-blue-600 hover:underline">
+                <i class="ph ph-file-pdf mr-1"></i>PDF
+              </a>
+            </td>
+          </tr>
+          {% empty %}<tr><td colspan="5" class="px-4 py-6 text-center text-zinc-500">No payments yet.</td></tr>{% endfor %}
         </tbody>
       </table>
     </div>

@@ -570,6 +570,45 @@ def invoice_delete(request, pk):
     return render(request, "erp/confirm_delete.html", {"object": obj, "back": "invoice_list"})
 
 
+@login_required
+def invoice_pdf(request, pk):
+    """Download invoice as PDF (admin/accountant or the student's parent/self)."""
+    from django.http import HttpResponse, HttpResponseForbidden
+    from .invoice_pdf import build_invoice_pdf
+    from accounts.models import School as _School
+    invoice = get_object_or_404(FeeInvoice, pk=pk)
+    u = request.user
+    allowed = (u.is_superuser or u.role in ("admin", "accountant", "principal")
+               or invoice.student.parent_users.filter(id=u.id).exists()
+               or invoice.student.student_user_id == u.id)
+    if not allowed:
+        return HttpResponseForbidden("Not allowed to view this invoice.")
+    pdf = build_invoice_pdf(invoice, _School.get_active())
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="invoice_{invoice.id}.pdf"'
+    return resp
+
+
+@login_required
+def payment_receipt_pdf(request, pk):
+    """Download payment receipt PDF."""
+    from django.http import HttpResponse, HttpResponseForbidden
+    from .invoice_pdf import build_receipt_pdf
+    from accounts.models import School as _School
+    payment = get_object_or_404(FeePayment, pk=pk)
+    invoice = payment.invoice
+    u = request.user
+    allowed = (u.is_superuser or u.role in ("admin", "accountant", "principal")
+               or invoice.student.parent_users.filter(id=u.id).exists()
+               or invoice.student.student_user_id == u.id)
+    if not allowed:
+        return HttpResponseForbidden("Not allowed to view this receipt.")
+    pdf = build_receipt_pdf(payment, invoice, _School.get_active())
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="receipt_PMT-{payment.id}.pdf"'
+    return resp
+
+
 # ---------- Salaries ----------
 
 @login_required

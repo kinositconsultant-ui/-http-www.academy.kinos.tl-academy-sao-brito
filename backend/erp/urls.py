@@ -93,6 +93,8 @@ urlpatterns = [
     path("invoices/<int:pk>/", views.invoice_detail, name="invoice_detail"),
     path("invoices/<int:pk>/edit/", views.invoice_edit, name="invoice_edit"),
     path("invoices/<int:pk>/delete/", views.invoice_delete, name="invoice_delete"),
+    path("invoices/<int:pk>/pdf/", views.invoice_pdf, name="invoice_pdf"),
+    path("payments/<int:pk>/receipt.pdf", views.payment_receipt_pdf, name="payment_receipt_pdf"),
 
     # Salaries
     path("salaries/", views.salary_list, name="salary_list"),

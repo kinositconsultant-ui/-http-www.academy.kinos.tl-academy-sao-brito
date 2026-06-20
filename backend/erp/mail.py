@@ -1,21 +1,41 @@
 """SendGrid email sender.
 
 If SENDGRID_API_KEY and SENDGRID_FROM_EMAIL are set in the environment, real
-emails are sent via the SendGrid REST API. Otherwise emails are written to a
-local SentEmail model + stdout so the receipts are visible end-to-end while
+emails are sent via the official SendGrid SDK. Otherwise emails are written
+to the SentEmail audit log + stdout so receipts are visible end-to-end while
 running in MOCK mode.
 
 To enable real sending, set in /app/backend/.env:
     SENDGRID_API_KEY=SG.xxxxxxxxxxxx
-    SENDGRID_FROM_EMAIL=no-reply@isjb.edu
+    SENDGRID_FROM_EMAIL=no-reply@isjb.edu   (must be verified in SendGrid)
 """
 import os
-import requests
 from django.utils import timezone
 
 
 def _is_live():
     return bool(os.environ.get("SENDGRID_API_KEY")) and bool(os.environ.get("SENDGRID_FROM_EMAIL"))
+
+
+def _send_via_sdk(to_email: str, subject: str, html: str):
+    """Real send via official sendgrid SDK. Returns (ok, error_text)."""
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+    try:
+        msg = Mail(
+            from_email=os.environ["SENDGRID_FROM_EMAIL"],
+            to_emails=to_email,
+            subject=subject,
+            html_content=html,
+        )
+        sg = SendGridAPIClient(os.environ["SENDGRID_API_KEY"])
+        resp = sg.send(msg)
+        ok = resp.status_code in (200, 202)
+        if not ok:
+            return False, f"HTTP {resp.status_code}: {getattr(resp, 'body', '')!s:.200}"
+        return True, ""
+    except Exception as exc:  # noqa: BLE001
+        return False, str(exc)
 
 
 def send_email(to_email: str, subject: str, html: str, *, related_invoice=None):
@@ -29,31 +49,12 @@ def send_email(to_email: str, subject: str, html: str, *, related_invoice=None):
         return {"status": "skipped", "reason": "no recipient"}
 
     mode = "live" if _is_live() else "mock"
-    error_text = ""
     if mode == "live":
-        try:
-            r = requests.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                headers={
-                    "Authorization": f"Bearer {os.environ['SENDGRID_API_KEY']}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "personalizations": [{"to": [{"email": to_email}], "subject": subject}],
-                    "from": {"email": os.environ["SENDGRID_FROM_EMAIL"]},
-                    "content": [{"type": "text/html", "value": html}],
-                },
-                timeout=10,
-            )
-            ok = r.status_code in (200, 202)
-            if not ok:
-                error_text = f"HTTP {r.status_code}: {r.text[:200]}"
-        except Exception as exc:  # noqa: BLE001
-            ok = False
-            error_text = str(exc)
+        ok, error_text = _send_via_sdk(to_email, subject, html)
     else:
-        ok = True  # MOCK always "succeeds"
-        print(f"[SendGrid MOCK] To: {to_email} | Subject: {subject}\n--- HTML ---\n{html}\n--- END ---")
+        ok, error_text = True, ""
+        print(f"[SendGrid MOCK] To: {to_email} | Subject: {subject}\n"
+              f"--- HTML ---\n{html}\n--- END ---")
 
     SentEmail.objects.create(
         to_email=to_email, subject=subject, html=html, mode=mode,

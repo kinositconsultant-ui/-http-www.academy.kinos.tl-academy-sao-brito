@@ -36,25 +36,28 @@
 9. Finance Report (YTD income, expense, net, donations, breakdowns by category/source).
 
 ## Implemented (2026-02)
-- Student self-service portal (2026-02-20):
-  - New `student` role on `User`; Student model now has a `student_user`
-    OneToOne link.
-  - Admin action on Student detail page: "Create student login" mints a
-    `role=student` User (default username/password = admission number) and
-    links it to the student.
-  - Post-login router sends students to `/api/student/`, parents to
-    `/api/parent/`, everyone else to `/api/dashboard/`.
-  - Read-only pages: Overview (KPIs + recent invoices + credit notes),
-    Grades (per semester with PASS/FAIL badges, year picker), Subjects
-    (failed-only "to repeat" list + class subjects), Credits (academic
-    credits + finance credit notes), Fees (invoice ledger), Download own
-    report-card PDF.
-  - New `CreditNote` finance model with admin CRUD at `/api/credit-notes/`
-    — fields: student, amount, reason, optional invoice, status (open /
-    applied / void). When status="applied" + invoice set, the invoice
-    amount is reduced and status refreshed.
-  - Seed mints two demo student logins: `adm-1003` / `student123`
-    (top student) and `adm-1005` / `student123` (has failed subjects).
+- Production hardening (2026-02-20):
+  - **Tailwind built locally** via the standalone CLI — `static/css/app.css`
+    (~22 KB minified) replaces the 3 MB CDN runtime in `base.html`.
+    `STATICFILES_DIRS = [BASE_DIR/"static"]` lets `collectstatic` pick it up
+    and Whitenoise serves it with manifest hashing & gzip. A
+    `python manage.py build_tailwind` command rebuilds on demand
+    (use `--watch` during template work).
+  - **SendGrid live path** wired through the official `sendgrid` SDK
+    (`erp/mail.py`). When both `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL`
+    are set the SDK is used; otherwise the existing MOCK path keeps writing
+    to the SentEmail audit log + stdout — no code flip needed to go live.
+  - **Per-invoice PDF** (`erp/invoice_pdf.py`) — two new endpoints:
+    - `GET /api/invoices/<id>/pdf/` — full invoice PDF (header, billed-to,
+      meta, line item, totals with paid-to-date & balance due, payment
+      history). Button on invoice detail; also accessible from the student
+      portal invoice list.
+    - `GET /api/payments/<id>/receipt.pdf` — payment receipt PDF (big
+      "amount received" banner, method, reference, balance after). Link on
+      each payment row.
+    Access enforced for admin / accountant / principal / linked parent /
+    student-self.
+- Student self-service portal (2026-02-20)
 - Dashboard Chart.js layout fix (2026-02-20)
 - Bulk PDF report cards verified end-to-end (2026-02-20)
 
