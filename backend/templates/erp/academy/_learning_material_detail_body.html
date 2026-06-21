@@ -19,6 +19,55 @@
       <div class="text-xs text-zinc-500">Added {{ m.created_at|date:"Y-m-d" }}</div>
     </div>
     {% if m.description %}<div class="pt-3 border-t border-zinc-100 text-sm text-zinc-700 whitespace-pre-wrap">{{ m.description }}</div>{% endif %}
+
+    {% if my_view %}
+    <div class="pt-3 border-t border-zinc-100" data-testid="material-progress">
+      <div class="text-xs uppercase tracking-wider text-zinc-500 mb-2">Your progress</div>
+      {% if my_view.completed %}
+        <div class="flex items-center gap-2 text-sm text-emerald-700 font-medium">
+          <i class="ph-bold ph-check-circle"></i> Completed · {{ my_view.completed_at|date:"d M Y" }}
+        </div>
+      {% else %}
+        <div class="text-xs text-zinc-500">Viewed {{ my_view.view_count }} time{{ my_view.view_count|pluralize }} · last on {{ my_view.last_viewed_at|date:"d M Y" }}</div>
+      {% endif %}
+      <form method="post" action="/api/learning/{{ m.id }}/complete/" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" data-testid="toggle-complete-btn"
+                class="inline-flex items-center rounded-md {% if my_view.completed %}bg-white text-zinc-900 ring-1 ring-zinc-300 hover:bg-zinc-50{% else %}bg-emerald-700 text-white hover:bg-emerald-800{% endif %} px-3 py-1.5 text-xs font-semibold">
+          <i class="ph-bold {% if my_view.completed %}ph-arrow-counter-clockwise{% else %}ph-check{% endif %} mr-1.5"></i>
+          {% if my_view.completed %}Mark as not complete{% else %}Mark as complete{% endif %}
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if engagement %}
+    <div class="pt-3 border-t border-zinc-100" data-testid="material-engagement">
+      <div class="text-xs uppercase tracking-wider text-zinc-500 mb-2">Engagement</div>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="rounded-md bg-zinc-50 p-2">
+          <div class="text-xl font-bold text-zinc-900">{{ engagement.total_views }}<span class="text-xs text-zinc-500 font-normal">/{{ engagement.eligible }}</span></div>
+          <div class="text-[10px] uppercase tracking-wider text-zinc-500">Viewers{% if engagement.view_pct is not None %} · {{ engagement.view_pct }}%{% endif %}</div>
+        </div>
+        <div class="rounded-md bg-emerald-50 p-2">
+          <div class="text-xl font-bold text-emerald-800">{{ engagement.completed }}<span class="text-xs text-emerald-700 font-normal">/{{ engagement.eligible }}</span></div>
+          <div class="text-[10px] uppercase tracking-wider text-emerald-700">Completed{% if engagement.completion_pct is not None %} · {{ engagement.completion_pct }}%{% endif %}</div>
+        </div>
+      </div>
+      {% if engagement.viewers %}
+      <details class="mt-2"><summary class="text-xs text-blue-700 hover:underline cursor-pointer">Show viewer list</summary>
+        <ul class="mt-2 text-xs text-zinc-700 space-y-1 max-h-40 overflow-y-auto">
+          {% for v in engagement.viewers %}
+          <li class="flex items-center justify-between gap-2">
+            <span class="truncate">{{ v.student.full_name }}</span>
+            {% if v.completed %}<span class="text-emerald-700 shrink-0">✓ {{ v.completed_at|date:"d M" }}</span>
+            {% else %}<span class="text-zinc-400 shrink-0">{{ v.last_viewed_at|date:"d M" }}</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </details>{% endif %}
+    </div>
+    {% endif %}
   </aside>
 
   <div class="lg:col-span-2 bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">

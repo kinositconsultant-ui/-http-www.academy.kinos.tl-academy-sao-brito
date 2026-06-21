@@ -109,6 +109,18 @@
   - **Nav**: "Learning Materials" added to admin sidebar; "Materials" tab added to student / teacher / parent topbars.
   - Regression suite: `/app/backend/tests/test_phase3_lms.py` — 28 new tests;
     grand total Phase 1+2+3 = **83 pass / 3 skipped (same seed-data gap)**.
+- **Phase 3.1 — LMS engagement tracking (2026-02-22)** —
+  - **MaterialView** model captures one row per student per material with
+    `first_viewed_at`, `last_viewed_at`, `view_count`, `completed` +
+    `completed_at`. Detail-page visits auto-increment the view count.
+  - **Student "Mark complete"** button at `POST /api/learning/<id>/complete/`
+    toggles completion. The card on the list view picks up a green "Done"
+    badge once completed.
+  - **Teacher / Admin engagement panel** on each material detail page —
+    viewer count, completion count, % of eligible students, and a collapsible
+    viewer list with per-student last-viewed / completed-on dates.
+  - Regression suite: `/app/backend/tests/test_phase31_material_views.py` —
+    6 tests; total Phase 1+2+3+3.1 = **88 pass / 4 skipped**.
 - **High-complexity refactor pass (2026-02-22)** — Behavior-neutral split of
   two long view functions into focused helpers:
   - `hr_dashboard` → 7 helpers (`_workforce_stats`, `_payroll_stats`,

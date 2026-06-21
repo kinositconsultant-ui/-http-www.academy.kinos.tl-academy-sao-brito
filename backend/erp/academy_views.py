@@ -20,7 +20,7 @@ from .forms import (
 from .models import (
     Assignment, AssignmentSubmission, Announcement, CalendarEvent,
     Student, Teacher, Grade, SchoolClass,
-    StudentDocument, LessonPlan, LearningMaterial,
+    StudentDocument, LessonPlan, LearningMaterial, MaterialView,
 )
 
 
@@ -605,10 +605,20 @@ def learning_material_list(request):
     for m in items:
         by_subject.setdefault(m.subject, []).append(m)
 
+    # For students: which material IDs have they completed?
+    my_completed_ids = set()
+    if role == "student":
+        st = Student.objects.filter(student_user=u).first()
+        if st:
+            my_completed_ids = set(MaterialView.objects.filter(
+                student=st, completed=True
+            ).values_list("material_id", flat=True))
+
     return render(request, "erp/academy/learning_material_list.html", {
         "items": items, "by_subject": by_subject,
         "subjects": [s for s, _ in by_subject.items()],
         "selected_subject": int(subj) if subj and subj.isdigit() else None,
+        "my_completed_ids": my_completed_ids,
         "school": School.get_active(),
         "base_template": _base_template_for(u),
         "can_manage": u.is_superuser or role in ("teacher", "admin", "principal"),
@@ -632,11 +642,72 @@ def learning_material_detail(request, pk):
                              .values_list("school_class_id", flat=True))
             if m.class_room_id and m.class_room_id not in class_ids:
                 return HttpResponseForbidden("Not for your children.")
+
+    # Auto-track student views (one row per student per material).
+    my_view = None
+    if role == "student":
+        st = Student.objects.filter(student_user=u).first()
+        if st:
+            my_view, created = MaterialView.objects.get_or_create(
+                student=st, material=m)
+            if not created:
+                my_view.view_count += 1
+                my_view.save(update_fields=["view_count", "last_viewed_at"])
+
+    # Engagement stats for staff/teachers.
+    engagement = None
+    if u.is_superuser or role in ("admin", "principal", "teacher"):
+        viewers = m.views.select_related("student").all()
+        completed = viewers.filter(completed=True).count()
+        # Pool of students who could see this material (for the % denominator).
+        eligible = (m.class_room.students.count()
+                    if m.class_room_id
+                    else Student.objects.filter(is_active=True,
+                                                school_class__isnull=False).count())
+        engagement = {
+            "viewers": list(viewers[:30]),
+            "total_views": viewers.count(),
+            "completed": completed,
+            "eligible": eligible,
+            "view_pct": round(100 * viewers.count() / eligible, 1) if eligible else None,
+            "completion_pct": round(100 * completed / eligible, 1) if eligible else None,
+        }
+
     return render(request, "erp/academy/learning_material_detail.html", {
         "m": m,
+        "my_view": my_view,
+        "engagement": engagement,
         "school": School.get_active(),
         "base_template": _base_template_for(u),
     })
+
+
+@login_required
+def material_toggle_complete(request, pk):
+    """Student toggles 'mark complete' on a learning material."""
+    if request.method != "POST":
+        return HttpResponseForbidden("POST required.")
+    u = request.user
+    if getattr(u, "role", "") != "student" and not u.is_superuser:
+        return HttpResponseForbidden("Students only.")
+    m = get_object_or_404(LearningMaterial, pk=pk, is_published=True)
+    st = Student.objects.filter(student_user=u).first()
+    if not st:
+        return HttpResponseForbidden("No student profile.")
+    if m.class_room_id and m.class_room_id != st.school_class_id:
+        return HttpResponseForbidden("Not for your class.")
+    view, _ = MaterialView.objects.get_or_create(student=st, material=m)
+    if view.completed:
+        view.completed = False
+        view.completed_at = None
+        msg = "Marked as not complete."
+    else:
+        view.completed = True
+        view.completed_at = timezone.now()
+        msg = "Marked as complete. Great job!"
+    view.save()
+    messages.success(request, msg)
+    return redirect("learning_material_detail", pk=m.pk)
 
 
 @login_required

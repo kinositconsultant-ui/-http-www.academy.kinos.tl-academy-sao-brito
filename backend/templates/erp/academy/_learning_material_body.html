@@ -20,6 +20,7 @@
             <div class="flex items-center gap-2 flex-wrap">
               <span class="font-medium text-zinc-900 group-hover:text-red-700 truncate">{{ m.title }}</span>
               <span class="text-[10px] uppercase tracking-wider rounded-md px-2 py-0.5 bg-zinc-100 text-zinc-700">{{ m.get_material_type_display }}</span>
+              {% if m.id in my_completed_ids %}<span class="text-[10px] uppercase tracking-wider rounded-md px-2 py-0.5 bg-emerald-100 text-emerald-800 font-semibold" data-testid="card-completed-{{ m.id }}"><i class="ph-bold ph-check mr-0.5"></i>Done</span>{% endif %}
               {% if not m.is_published %}<span class="text-[10px] uppercase tracking-wider rounded-md px-2 py-0.5 bg-amber-100 text-amber-800">Draft</span>{% endif %}
             </div>
             {% if m.week_no %}<div class="text-xs text-zinc-500">Week {{ m.week_no }}</div>{% endif %}

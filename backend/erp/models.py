@@ -1121,3 +1121,24 @@ class LearningMaterial(models.Model):
                 return f"https://player.vimeo.com/video/{vid}"
         return ""
 
+
+
+class MaterialView(models.Model):
+    """One row per student per material — captures first/last view + completion."""
+    student = models.ForeignKey(Student, on_delete=models.CASCADE,
+                                related_name="material_views")
+    material = models.ForeignKey(LearningMaterial, on_delete=models.CASCADE,
+                                 related_name="views")
+    first_viewed_at = models.DateTimeField(auto_now_add=True)
+    last_viewed_at = models.DateTimeField(auto_now=True)
+    view_count = models.PositiveIntegerField(default=1)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = [("student", "material")]
+        ordering = ["-last_viewed_at"]
+
+    def __str__(self):
+        return f"{self.student.full_name} · {self.material.title}"
+
