@@ -1,0 +1,39 @@
+{
+  "summary": "Backend regression after refactor of finance_report (views.py:867) and hr_dashboard (hr_views.py:86). Created /app/backend/tests/test_refactor_regression.py (pytest, 14 tests, 13 PASS + 1 SKIPPED). Verified: admin/admin123 login via Django CSRF+Referer flow redirects to /api/dashboard/ (200). GET /api/reports/finance/ returns 200 with all YTD KPI labels (income/expense/donation/salaries/outstanding/net), currency code (EUR rendered via School.get_active()), 12-month trend arrays and cat_chart/src_chart numeric payloads embedded in the page. GET /api/hr/ returns 200 with all 7 sections (workforce, payroll, recruitment, training, performance, attendance, inventory) and surface labels for active/leave/pending/jobs/candidates/training/reviews/present/low stock/assigned. PDF regression: invoice PDF (/api/invoices/<id>/pdf/) → application/pdf 200, 28KB+, %PDF magic OK; payslip PDF (/api/hr/payslip/<id>.pdf) → application/pdf 200, %PDF OK; report-card PDF (/api/students/<id>/report-card/) → application/pdf 200, %PDF OK. Parent portal (/api/parent/) loads 200 for parent/password123 → portal_views.py defensive `session=None`/`live=None` regression confirmed (no 500). All iteration_2 baseline behaviors preserved; refactor is behavior-neutral.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/parent/invoice/<id>/pay/", "issue": "Could not exercise invoice_pay / invoice_pay_crypto / invoice_payment_status via HTTP for the parent user because the seeded parent's children currently have no outstanding invoice on the dashboard (all paid in iteration_2). Defensive `session=None`/`live=None` init is structural and was code-reviewed but not runtime-asserted with a live payment intent. Test is SKIPPED, not failed."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_refactor_regression.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "views.py:_finance_ytd_totals correctly preserves the original semantics: salary_total uses SalaryPayment.objects.filter(status='paid') WITHOUT a year_start filter — that matches the pre-refactor behavior but is semantically odd for a 'YTD' panel labelled 'Total Paid Salaries'. Worth flagging to product, not a regression.",
+    "views.py:_finance_monthly_trend uses a nested _bucket closure and re-iterates Income/Expense/Donation querysets — fine for current volumes, but if the dataset grows it could be a single GROUP BY per model. Non-blocking.",
+    "hr_views.py:_inventory_stats loads ALL InventoryItem rows into a python list to compute is_low_stock and total_value (python properties). Acceptable today (seed has <100 items) but flagged as N+1 risk if inventory grows.",
+    "hr_views.py:_today_attendance_stats divides present by total only when total>0 — correctly avoids ZeroDivisionError. Good.",
+    "report_card.py: confirmed `from .models import Grade` is the canonical import (previously `__import__('erp').models.Grade.SEMESTER_CHOICES`). Cleaner and import-cycle safe.",
+    "portal_views.py invoice_pay* defensive `session=None`/`live=None` initializers are present — prevents UnboundLocalError if Stripe SDK raises before assignment. Recommend follow-up: also wrap stripe.checkout.Session.create in try/except with a user-facing flash, currently any Stripe exception propagates and renders Django 500.",
+    "pdf_brand.py / payslip_pdf.py / invoice_pdf.py: branded headers still render — all 3 PDFs are >5KB and start with %PDF magic, content-type application/pdf. Branding regression suite is green."
+  ],
+  "updated_files": [
+    "/app/backend/tests/__init__.py (created, empty)",
+    "/app/backend/tests/test_refactor_regression.py (new pytest suite, 14 tests)"
+  ],
+  "success_rate": {"backend": "100% (13/13 executed, 1 skipped due to seed data, 0 failed)", "frontend": "n/a (backend-only run)"},
+  "test_credentials": "admin/admin123 (used), parent/password123 (used). Sourced from /app/memory/test_credentials.md.",
+  "seed_data_creation": "None. Read-only test run — no DB mutations.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Refactor of finance_report and hr_dashboard is behavior-neutral — all KPI labels, chart payloads and sections still render. Test suite at /app/backend/tests/test_refactor_regression.py is the new baseline; run it after any further changes to views.py/hr_views.py/portal_views.py/pdf_brand.py. The single SKIPPED test (parent invoice-pay routes) needs a seeded outstanding invoice for parent user's children — add one if you want full coverage of portal_views defensive init. CSRF login pattern (GET form → extract csrfmiddlewaretoken → POST with Referer header → session cookie) is reusable.",
+  "rca_of_the_issue": "N/A — no regressions found. Two of my initial assertions were too strict (looked for literal 'salary' when template uses 'Salaries', and for 'surplus/deficit' when template just labels the KPI 'Net'); both adjusted to match the actual template wording and now pass."
+}

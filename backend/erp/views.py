@@ -863,26 +863,28 @@ def leave_delete(request, pk):
 
 # ---------- Reports ----------
 
-@login_required
-def finance_report(request):
-    today = timezone.now().date()
-    year_start = today.replace(month=1, day=1)
-    income_total = Income.objects.filter(date__gte=year_start).aggregate(s=Sum("amount"))["s"] or 0
-    expense_total = Expense.objects.filter(date__gte=year_start).aggregate(s=Sum("amount"))["s"] or 0
-    donation_total = Donation.objects.filter(date__gte=year_start).aggregate(s=Sum("amount"))["s"] or 0
-    salary_total = SalaryPayment.objects.filter(status="paid").aggregate(s=Sum("amount"))["s"] or 0
-    outstanding = FeeInvoice.objects.exclude(status="paid")
-    outstanding_total = sum((inv.balance for inv in outstanding), Decimal("0"))
-    # By category
-    by_category = list(Expense.objects.values("category")
-                       .annotate(total=Sum("amount")).order_by("-total"))
-    by_source = list(Income.objects.values("source")
-                     .annotate(total=Sum("amount")).order_by("-total"))
+def _finance_ytd_totals(year_start):
+    income = Income.objects.filter(date__gte=year_start).aggregate(s=Sum("amount"))["s"] or 0
+    expense = Expense.objects.filter(date__gte=year_start).aggregate(s=Sum("amount"))["s"] or 0
+    donation = Donation.objects.filter(date__gte=year_start).aggregate(s=Sum("amount"))["s"] or 0
+    salary = SalaryPayment.objects.filter(status="paid").aggregate(s=Sum("amount"))["s"] or 0
+    outstanding_total = sum(
+        (inv.balance for inv in FeeInvoice.objects.exclude(status="paid")),
+        Decimal("0"))
+    return {
+        "income_total": income, "expense_total": expense,
+        "donation_total": donation, "salary_total": salary,
+        "outstanding_total": outstanding_total,
+        "net": (income or 0) - (expense or 0),
+    }
 
-    # ---- Monthly trend (last 12 months) ----
+
+def _finance_monthly_trend(today):
+    """Return (labels, income_series, expense_series, donation_series, start_date)
+    for the trailing 12 months ending at `today`."""
     from calendar import month_abbr
     from datetime import date as _date
-    # Build the list of (year, month) buckets ending at this month.
+
     months = []
     y, m = today.year, today.month
     for _ in range(12):
@@ -891,10 +893,11 @@ def finance_report(request):
         if m == 0:
             m, y = 12, y - 1
     months.reverse()
-    labels = [f"{month_abbr[m]} {str(y)[-2:]}" for (y, m) in months]
+    labels = [f"{month_abbr[mm]} {str(yy)[-2:]}" for (yy, mm) in months]
+    start = _date(months[0][0], months[0][1], 1)
 
     def _bucket(qs, date_field="date"):
-        sums = {(y, m): 0.0 for (y, m) in months}
+        sums = {key: 0.0 for key in months}
         for row in qs.values(date_field, "amount"):
             d = row[date_field]
             key = (d.year, d.month)
@@ -902,37 +905,48 @@ def finance_report(request):
                 sums[key] += float(row["amount"] or 0)
         return [round(sums[k], 2) for k in months]
 
-    start_bucket = _date(months[0][0], months[0][1], 1)
-    income_series = _bucket(Income.objects.filter(date__gte=start_bucket))
-    expense_series = _bucket(Expense.objects.filter(date__gte=start_bucket))
-    donation_series = _bucket(Donation.objects.filter(date__gte=start_bucket))
+    return {
+        "trend_labels": labels,
+        "trend_income": _bucket(Income.objects.filter(date__gte=start)),
+        "trend_expense": _bucket(Expense.objects.filter(date__gte=start)),
+        "trend_donation": _bucket(Donation.objects.filter(date__gte=start)),
+    }
 
-    # Friendly labels for the doughnut charts
+
+def _finance_breakdowns():
+    by_category = list(Expense.objects.values("category")
+                       .annotate(total=Sum("amount")).order_by("-total"))
+    by_source = list(Income.objects.values("source")
+                     .annotate(total=Sum("amount")).order_by("-total"))
     expense_cat_map = dict(Expense.CATEGORY)
     income_src_map = dict(Income.SOURCE)
-    cat_chart = [{"label": expense_cat_map.get(r["category"], r["category"]).title(),
-                  "total": float(r["total"] or 0)} for r in by_category]
-    src_chart = [{"label": income_src_map.get(r["source"], r["source"]).title(),
-                  "total": float(r["total"] or 0)} for r in by_source]
-
-    return render(request, "erp/finance_report.html", {
-        "income_total": income_total,
-        "expense_total": expense_total,
-        "donation_total": donation_total,
-        "salary_total": salary_total,
-        "outstanding_total": outstanding_total,
-        "net": (income_total or 0) - (expense_total or 0),
+    return {
         "by_category": by_category,
         "by_source": by_source,
-        # Charts (JSON-encoded via json_script in the template)
-        "trend_labels": labels,
-        "trend_income": income_series,
-        "trend_expense": expense_series,
-        "trend_donation": donation_series,
-        "cat_chart": cat_chart,
-        "src_chart": src_chart,
+        "cat_chart": [
+            {"label": expense_cat_map.get(r["category"], r["category"]).title(),
+             "total": float(r["total"] or 0)}
+            for r in by_category
+        ],
+        "src_chart": [
+            {"label": income_src_map.get(r["source"], r["source"]).title(),
+             "total": float(r["total"] or 0)}
+            for r in by_source
+        ],
+    }
+
+
+@login_required
+def finance_report(request):
+    today = timezone.now().date()
+    year_start = today.replace(month=1, day=1)
+    ctx = {
         "currency_code": (School.get_active().currency if School.get_active() else "USD"),
-    })
+    }
+    ctx.update(_finance_ytd_totals(year_start))
+    ctx.update(_finance_monthly_trend(today))
+    ctx.update(_finance_breakdowns())
+    return render(request, "erp/finance_report.html", ctx)
 
 
 

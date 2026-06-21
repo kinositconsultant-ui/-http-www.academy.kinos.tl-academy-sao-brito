@@ -41,80 +41,98 @@ def _hr_required(view):
 # Dashboard
 # =====================================================================
 
-@login_required
-@_hr_required
-def hr_dashboard(request):
-    today = date.today()
-    month_start = today.replace(day=1)
-
-    # Workforce
+def _workforce_stats(today):
     employees = Employee.objects.all()
     active = employees.filter(is_active=True).count()
     inactive = employees.filter(is_active=False).count()
     on_leave_today = LeaveRequest.objects.filter(
         status="approved", start_date__lte=today, end_date__gte=today).count()
+    return {
+        "active": active, "inactive": inactive,
+        "on_leave_today": on_leave_today,
+        "total_employees": active + inactive,
+    }
 
-    # Payroll
-    paid_this_month = SalaryPayment.objects.filter(
+
+def _payroll_stats(month_start, today):
+    paid = SalaryPayment.objects.filter(
         status="paid", paid_date__gte=month_start, paid_date__lte=today
     ).aggregate(s=Sum("amount"))["s"] or Decimal("0")
-    pending_payslips = SalaryPayment.objects.filter(status="pending").count()
+    pending = SalaryPayment.objects.filter(status="pending").count()
+    return {"paid_this_month": paid, "pending_payslips": pending}
 
-    # Recruitment
-    open_jobs = JobPosting.objects.filter(status="open").count()
-    candidates_in_pipeline = Candidate.objects.exclude(
-        stage__in=("hired", "rejected")).count()
+
+def _recruitment_stats():
     funnel = list(Candidate.objects.values("stage").annotate(c=Count("id")))
     stage_map = dict(Candidate.STAGE)
-    funnel_chart = [{"label": stage_map.get(r["stage"], r["stage"]), "total": r["c"]}
-                    for r in funnel]
+    return {
+        "open_jobs": JobPosting.objects.filter(status="open").count(),
+        "candidates_in_pipeline": Candidate.objects.exclude(
+            stage__in=("hired", "rejected")).count(),
+        "funnel_chart": [
+            {"label": stage_map.get(r["stage"], r["stage"]), "total": r["c"]}
+            for r in funnel
+        ],
+    }
 
-    # Training
-    active_trainings = TrainingProgram.objects.filter(
-        status__in=("scheduled", "ongoing")).count()
-    enrollments = TrainingEnrollment.objects.filter(status="enrolled").count()
 
-    # Performance
-    avg_rating = (PerformanceReview.objects.aggregate(a=Avg("rating"))["a"] or 0)
-    reviews_this_quarter = PerformanceReview.objects.filter(
-        period_end__gte=today.replace(month=((today.month - 1) // 3) * 3 + 1, day=1)
-    ).count()
+def _training_stats():
+    return {
+        "active_trainings": TrainingProgram.objects.filter(
+            status__in=("scheduled", "ongoing")).count(),
+        "enrollments": TrainingEnrollment.objects.filter(status="enrolled").count(),
+    }
 
-    # Today's employee attendance
-    today_att = EmployeeAttendance.objects.filter(date=today)
-    today_present = today_att.filter(status__in=("present", "remote", "late")).count()
-    today_total = today_att.count()
-    today_pct = round(100 * today_present / today_total, 1) if today_total else None
 
-    # Inventory
-    total_items = InventoryItem.objects.count()
-    low_stock = [i for i in InventoryItem.objects.all() if i.is_low_stock]
-    inventory_value = sum((i.total_value for i in InventoryItem.objects.all()), 0)
-    items_assigned = InventoryAssignment.objects.filter(status="assigned").count()
-
-    return render(request, "erp/hr/dashboard.html", {
-        "school": School.get_active(),
-        # Workforce
-        "active": active, "inactive": inactive, "on_leave_today": on_leave_today,
-        "total_employees": active + inactive,
-        # Payroll
-        "paid_this_month": paid_this_month, "pending_payslips": pending_payslips,
-        # Recruitment
-        "open_jobs": open_jobs, "candidates_in_pipeline": candidates_in_pipeline,
-        "funnel_chart": funnel_chart,
-        # Training
-        "active_trainings": active_trainings, "enrollments": enrollments,
-        # Performance
+def _performance_stats(today):
+    avg_rating = PerformanceReview.objects.aggregate(a=Avg("rating"))["a"] or 0
+    quarter_start = today.replace(
+        month=((today.month - 1) // 3) * 3 + 1, day=1)
+    return {
         "avg_rating": round(float(avg_rating), 2),
-        "reviews_this_quarter": reviews_this_quarter,
-        # Attendance
-        "today_present": today_present, "today_total": today_total,
-        "today_pct": today_pct,
-        # Inventory
-        "total_items": total_items, "low_stock_count": len(low_stock),
+        "reviews_this_quarter": PerformanceReview.objects.filter(
+            period_end__gte=quarter_start).count(),
+    }
+
+
+def _today_attendance_stats(today):
+    today_att = EmployeeAttendance.objects.filter(date=today)
+    present = today_att.filter(status__in=("present", "remote", "late")).count()
+    total = today_att.count()
+    return {
+        "today_present": present,
+        "today_total": total,
+        "today_pct": round(100 * present / total, 1) if total else None,
+    }
+
+
+def _inventory_stats():
+    items = list(InventoryItem.objects.all())
+    low_stock = [i for i in items if i.is_low_stock]
+    return {
+        "total_items": len(items),
+        "low_stock_count": len(low_stock),
         "low_stock_items": low_stock[:5],
-        "inventory_value": inventory_value, "items_assigned": items_assigned,
-    })
+        "inventory_value": sum((i.total_value for i in items), 0),
+        "items_assigned": InventoryAssignment.objects.filter(
+            status="assigned").count(),
+    }
+
+
+@login_required
+@_hr_required
+def hr_dashboard(request):
+    today = date.today()
+    month_start = today.replace(day=1)
+    ctx = {"school": School.get_active()}
+    ctx.update(_workforce_stats(today))
+    ctx.update(_payroll_stats(month_start, today))
+    ctx.update(_recruitment_stats())
+    ctx.update(_training_stats())
+    ctx.update(_performance_stats(today))
+    ctx.update(_today_attendance_stats(today))
+    ctx.update(_inventory_stats())
+    return render(request, "erp/hr/dashboard.html", ctx)
 
 
 # =====================================================================
