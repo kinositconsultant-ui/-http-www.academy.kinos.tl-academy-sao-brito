@@ -1,0 +1,75 @@
+{% extends "teacher_base.html" %}
+{% block title %}Mark Attendance{% endblock %}
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="teacher-attendance">
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Attendance</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">Mark attendance</h1>
+  <p class="mt-1 text-sm text-zinc-500">Pick a class and date, then save.</p>
+
+  {% if messages %}{% for m in messages %}<div class="mt-4 rounded-md bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ m }}</div>{% endfor %}{% endif %}
+
+  <form method="get" class="mt-6 flex flex-wrap items-end gap-4 bg-white rounded-lg border border-zinc-200 p-5">
+    <div>
+      <label class="block text-xs uppercase tracking-wider text-zinc-500 mb-1">Class</label>
+      <select name="class" data-testid="att-class-select" onchange="this.form.submit()"
+        class="rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700">
+        {% for c in classes %}<option value="{{ c.id }}" {% if selected.id == c.id %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs uppercase tracking-wider text-zinc-500 mb-1">Date</label>
+      <input type="date" name="date" value="{{ the_date }}" onchange="this.form.submit()"
+        data-testid="att-date-input"
+        class="rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700" />
+    </div>
+  </form>
+
+  {% if selected and rows %}
+  <form method="post" class="mt-6 bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    {% csrf_token %}
+    <input type="hidden" name="class" value="{{ selected.id }}" />
+    <input type="hidden" name="date" value="{{ the_date }}" />
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Student</th>
+        <th class="px-5 py-2 text-left">Admission</th>
+        <th class="px-5 py-2 text-center">Status</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for s, row in rows %}
+        <tr data-testid="att-row-{{ s.id }}">
+          <td class="px-5 py-3 font-medium">{{ s.full_name }}</td>
+          <td class="px-5 py-3 font-mono text-xs text-zinc-600">{{ s.admission_no }}</td>
+          <td class="px-5 py-3 text-center">
+            <select name="status_{{ s.id }}" data-testid="att-select-{{ s.id }}"
+              class="rounded-md border-0 py-1.5 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700">
+              {% with cur=row.status|default:"present" %}
+              <option value="present" {% if cur == "present" %}selected{% endif %}>Present</option>
+              <option value="absent" {% if cur == "absent" %}selected{% endif %}>Absent</option>
+              <option value="late" {% if cur == "late" %}selected{% endif %}>Late</option>
+              <option value="excused" {% if cur == "excused" %}selected{% endif %}>Excused</option>
+              {% endwith %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="px-5 py-4 border-t border-zinc-200 bg-zinc-50 flex justify-end">
+      <button type="submit" data-testid="att-save-btn"
+        class="inline-flex items-center rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">
+        <i class="ph-bold ph-check mr-2"></i> Save attendance
+      </button>
+    </div>
+  </form>
+  {% elif selected %}
+  <div class="mt-6 bg-white rounded-lg border border-zinc-200 p-10 text-center text-zinc-500 text-sm">
+    No active students in {{ selected }}.
+  </div>
+  {% else %}
+  <div class="mt-6 bg-white rounded-lg border border-zinc-200 p-10 text-center text-zinc-500 text-sm">
+    You have no classes assigned. Ask an admin to assign you to subjects.
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

@@ -56,10 +56,13 @@ def parent_student_detail(request, pk):
     invoices = student.invoices.all()
     grades = student.grades.select_related("subject", "academic_year").order_by("-recorded_at")[:50]
     attendance = student.attendance.order_by("-date")[:30]
+    evaluations = student.evaluations.filter(visible_to_parent=True).select_related(
+        "teacher", "academic_year").order_by("-created_at")
     years = AcademicYear.objects.all()
     return render(request, "erp/parent_student.html", {
         "student": student, "invoices": invoices,
         "grades": grades, "attendance": attendance, "years": years,
+        "evaluations": evaluations,
         "current_year": AcademicYear.objects.filter(is_current=True).first(),
     })
 

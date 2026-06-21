@@ -104,5 +104,39 @@
       </table>
     </div>
   </div>
+
+  <!-- Teacher's evaluations & advice -->
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden" data-testid="parent-evaluations">
+    <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+      <h2 class="font-display font-semibold"><i class="ph-bold ph-chat-circle-text mr-1"></i> Teacher notes & advice</h2>
+    </div>
+    {% if evaluations %}
+    <ul class="divide-y divide-zinc-100">
+      {% for e in evaluations %}
+      <li class="px-5 py-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="text-xs text-zinc-500">
+            <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider
+              {% if e.category == 'behaviour' %}bg-amber-50 text-amber-700 ring-1 ring-amber-200
+              {% elif e.category == 'counselling' %}bg-blue-50 text-blue-700 ring-1 ring-blue-200
+              {% elif e.category == 'recognition' %}bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200
+              {% else %}bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200{% endif %}">{{ e.get_category_display }}</span>
+            · {{ e.get_semester_display }} · {{ e.academic_year.name|default:"—" }} · {{ e.created_at|date:"Y-m-d" }}
+          </div>
+          <div class="text-xs text-zinc-500">by {{ e.teacher.full_name|default:"—" }}</div>
+        </div>
+        <div class="mt-2 text-sm text-zinc-800 whitespace-pre-line">{{ e.comment }}</div>
+        {% if e.recommendation %}
+        <div class="mt-2 rounded-md bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-900">
+          <strong class="text-xs uppercase tracking-wider">Advice:</strong> {{ e.recommendation }}
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="p-8 text-center text-zinc-500 text-sm">No teacher notes yet.</div>
+    {% endif %}
+  </div>
 </main>
 {% endblock %}

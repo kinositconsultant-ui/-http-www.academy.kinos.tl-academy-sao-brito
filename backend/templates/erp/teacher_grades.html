@@ -1,0 +1,94 @@
+{% extends "teacher_base.html" %}
+{% block title %}Enter Grades{% endblock %}
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="teacher-grades">
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Grades</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">Enter / edit grades</h1>
+
+  {% if messages %}{% for m in messages %}<div class="mt-4 rounded-md bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ m }}</div>{% endfor %}{% endif %}
+
+  <form method="get" class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-3 bg-white rounded-lg border border-zinc-200 p-5">
+    <div>
+      <label class="block text-xs uppercase tracking-wider text-zinc-500 mb-1">Subject</label>
+      <select name="subject" onchange="this.form.submit()" data-testid="grade-subject-select"
+        class="w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700">
+        <option value="">—</option>
+        {% for s in subjects %}<option value="{{ s.id }}" {% if selected_subject.id == s.id %}selected{% endif %}>{{ s.name }} ({{ s.school_class }})</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs uppercase tracking-wider text-zinc-500 mb-1">Year</label>
+      <select name="year" onchange="this.form.submit()"
+        class="w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700">
+        {% for y in years %}<option value="{{ y.id }}" {% if selected_year.id == y.id %}selected{% endif %}>{{ y.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs uppercase tracking-wider text-zinc-500 mb-1">Semester</label>
+      <select name="semester" onchange="this.form.submit()"
+        class="w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700">
+        <option value="s1" {% if semester == "s1" %}selected{% endif %}>Semester 1</option>
+        <option value="s2" {% if semester == "s2" %}selected{% endif %}>Semester 2</option>
+        <option value="s3" {% if semester == "s3" %}selected{% endif %}>Semester 3</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs uppercase tracking-wider text-zinc-500 mb-1">Exam name</label>
+      <input type="text" name="exam_name" value="{{ exam_name }}" data-testid="exam-name-input"
+        class="w-full rounded-md border-0 py-2 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700" />
+    </div>
+  </form>
+
+  {% if selected_subject and grade_rows %}
+  <form method="post" class="mt-6 bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    {% csrf_token %}
+    <input type="hidden" name="subject" value="{{ selected_subject.id }}" />
+    <input type="hidden" name="year" value="{{ selected_year.id }}" />
+    <input type="hidden" name="semester" value="{{ semester }}" />
+    <input type="hidden" name="exam_name" value="{{ exam_name }}" />
+    <div class="px-5 py-3 border-b border-zinc-200 bg-zinc-50 flex items-center gap-3">
+      <span class="text-xs uppercase tracking-wider text-zinc-500">Score total:</span>
+      <input type="number" name="total" value="100" min="1" max="1000" data-testid="grade-total-input"
+        class="w-24 rounded-md border-0 py-1.5 px-3 text-sm shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700" />
+    </div>
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Student</th>
+        <th class="px-5 py-2 text-left">Admission</th>
+        <th class="px-5 py-2 text-right">Current</th>
+        <th class="px-5 py-2 text-right">New score</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for s, row in grade_rows %}
+        <tr data-testid="grade-row-{{ s.id }}">
+          <td class="px-5 py-3 font-medium">{{ s.full_name }}</td>
+          <td class="px-5 py-3 font-mono text-xs text-zinc-600">{{ s.admission_no }}</td>
+          <td class="px-5 py-3 text-right tabular-nums text-zinc-600">{% if row %}{{ row.score }} / {{ row.total }} ({{ row.percentage }}%){% else %}—{% endif %}</td>
+          <td class="px-5 py-3 text-right">
+            <input type="number" name="score_{{ s.id }}" step="0.1" min="0" max="1000"
+              value="{% if row %}{{ row.score }}{% endif %}" placeholder="—"
+              data-testid="score-input-{{ s.id }}"
+              class="w-24 rounded-md border-0 py-1.5 px-3 text-sm text-right shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-red-700" />
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="px-5 py-4 border-t border-zinc-200 bg-zinc-50 flex justify-end">
+      <button type="submit" data-testid="grade-save-btn"
+        class="inline-flex items-center rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">
+        <i class="ph-bold ph-check mr-2"></i> Save grades
+      </button>
+    </div>
+  </form>
+  {% elif selected_subject %}
+  <div class="mt-6 bg-white rounded-lg border border-zinc-200 p-10 text-center text-zinc-500 text-sm">
+    No active students in this class.
+  </div>
+  {% else %}
+  <div class="mt-6 bg-white rounded-lg border border-zinc-200 p-10 text-center text-zinc-500 text-sm">
+    Pick a subject to start.
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

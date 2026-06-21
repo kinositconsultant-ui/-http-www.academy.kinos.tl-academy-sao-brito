@@ -1,0 +1,53 @@
+{% extends "teacher_base.html" %}
+{% block title %}Evaluations & Advice{% endblock %}
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="teacher-evals">
+  <div class="flex items-end justify-between flex-wrap gap-3">
+    <div>
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Counselling</div>
+      <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">Evaluations & Advice</h1>
+      <p class="mt-1 text-sm text-zinc-500">Narrative notes are visible to parents in their portal.</p>
+    </div>
+    <a href="/api/teacher/evaluations/add/" data-testid="add-eval-btn"
+      class="inline-flex items-center rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">
+      <i class="ph-bold ph-plus mr-2"></i> Write evaluation
+    </a>
+  </div>
+
+  {% if messages %}{% for m in messages %}<div class="mt-4 rounded-md bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ m }}</div>{% endfor %}{% endif %}
+
+  <div class="mt-6 grid grid-cols-1 gap-4">
+    {% for e in rows %}
+    <div class="bg-white rounded-lg border border-zinc-200 p-5" data-testid="eval-{{ e.id }}">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <div class="font-display font-bold text-zinc-900">{{ e.student.full_name }}</div>
+          <div class="text-xs text-zinc-500 mt-0.5">
+            <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider
+              {% if e.category == 'behaviour' %}bg-amber-50 text-amber-700 ring-1 ring-amber-200
+              {% elif e.category == 'counselling' %}bg-blue-50 text-blue-700 ring-1 ring-blue-200
+              {% elif e.category == 'recognition' %}bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200
+              {% else %}bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200{% endif %}">{{ e.get_category_display }}</span>
+            · {{ e.get_semester_display }} · {{ e.academic_year.name|default:"—" }} · {{ e.created_at|date:"Y-m-d" }}
+            {% if e.visible_to_parent %}<span class="ml-2 text-emerald-700"><i class="ph ph-eye"></i> visible to parent</span>{% endif %}
+          </div>
+        </div>
+        <form method="post" action="/api/teacher/evaluations/{{ e.id }}/delete/" onsubmit="return confirm('Delete this evaluation?');">{% csrf_token %}
+          <button class="text-red-600 hover:underline text-sm" data-testid="del-eval-{{ e.id }}">Delete</button>
+        </form>
+      </div>
+      <div class="mt-3 text-sm text-zinc-800 whitespace-pre-line">{{ e.comment }}</div>
+      {% if e.recommendation %}
+      <div class="mt-3 rounded-md bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-900">
+        <strong class="text-xs uppercase tracking-wider">Recommendation:</strong> {{ e.recommendation }}
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="bg-white rounded-lg border border-zinc-200 p-10 text-center text-zinc-500 text-sm">
+      No evaluations yet. Click "Write evaluation" to add your first one.
+    </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

@@ -164,6 +164,14 @@ class Teacher(models.Model):
     photo = models.ImageField(upload_to="teachers/", blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
+    # Teacher self-service portal (links Teacher → User with role=teacher)
+    teacher_user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="teacher_profile",
+        limit_choices_to={"role": "teacher"},
+        help_text="Teacher account used to log in to the teacher portal.",
+    )
+
     class Meta:
         ordering = ["-id"]
 
@@ -713,3 +721,34 @@ class InventoryAssignment(models.Model):
 
     class Meta:
         ordering = ["-assigned_on", "-id"]
+
+
+class StudentEvaluation(models.Model):
+    """Teacher's narrative note / advice for a student (per term)."""
+    CATEGORY = [
+        ("academic", "Academic"),
+        ("behaviour", "Behaviour"),
+        ("counselling", "Counselling"),
+        ("recognition", "Recognition / Praise"),
+        ("other", "Other"),
+    ]
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="evaluations")
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="evaluations_written")
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.SET_NULL,
+                                      null=True, blank=True, related_name="evaluations")
+    semester = models.CharField(max_length=10, choices=Grade.SEMESTER_CHOICES, default="s1")
+    category = models.CharField(max_length=12, choices=CATEGORY, default="academic")
+    comment = models.TextField()
+    recommendation = models.TextField(blank=True)
+    visible_to_parent = models.BooleanField(
+        default=True,
+        help_text="On by default — note appears on the parent + student portals.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.get_category_display()} · {self.student.full_name}"
+

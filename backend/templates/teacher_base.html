@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col bg-zinc-50">
+  <header class="bg-gradient-to-r from-red-900 via-red-800 to-zinc-900 text-white">
+    <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="{% static 'img/isjb-logo.jpg' %}" alt="ISJB crest"
+          class="h-12 w-12 rounded-md bg-white p-1 ring-1 ring-white/20 shadow-sm" data-testid="teacher-brand-logo" />
+        <div class="leading-tight">
+          <div class="font-display font-bold text-[15px]">{{ school.name|default:"Instituto São João de Brito" }}</div>
+          <div class="text-[10px] uppercase tracking-widest text-amber-300 italic">Teacher Portal · {{ school.motto|default:"Educar para Servir" }}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-sm">
+        <span class="text-white/70">Hi, <span data-testid="teacher-name">{{ user.display_name }}</span></span>
+        <form action="/api/logout/" method="post" class="inline">
+          {% csrf_token %}
+          <button type="submit" data-testid="teacher-logout-btn" class="text-white/80 hover:text-white"><i class="ph ph-sign-out mr-1"></i>Sign out</button>
+        </form>
+      </div>
+    </div>
+    <nav class="bg-zinc-800/80 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6 flex items-center gap-1 text-sm overflow-x-auto">
+        {% with rp=request.path %}
+        <a href="/api/teacher/" data-testid="teacher-nav-dashboard"
+          class="px-3 py-3 border-b-2 {% if rp == '/api/teacher/' %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-house mr-1"></i> Overview
+        </a>
+        <a href="/api/teacher/attendance/" data-testid="teacher-nav-attendance"
+          class="px-3 py-3 border-b-2 {% if '/attendance/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-calendar-check mr-1"></i> Attendance
+        </a>
+        <a href="/api/teacher/grades/" data-testid="teacher-nav-grades"
+          class="px-3 py-3 border-b-2 {% if '/grades/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-chart-line mr-1"></i> Grades
+        </a>
+        <a href="/api/teacher/evaluations/" data-testid="teacher-nav-evals"
+          class="px-3 py-3 border-b-2 {% if '/evaluations' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-chat-circle-text mr-1"></i> Evaluations & Advice
+        </a>
+        <a href="/api/teacher/profile/" data-testid="teacher-nav-profile"
+          class="px-3 py-3 border-b-2 {% if '/profile/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-user mr-1"></i> My Profile
+        </a>
+        {% endwith %}
+      </div>
+    </nav>
+  </header>
+  <div class="flex-1">{% block portal_content %}{% endblock %}</div>
+  {% include "_footer.html" %}
+</div>
+{% endblock %}

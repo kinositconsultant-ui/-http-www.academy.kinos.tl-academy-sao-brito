@@ -1,0 +1,101 @@
+{% extends "teacher_base.html" %}
+{% load humanize %}
+{% block title %}My Profile{% endblock %}
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="teacher-profile">
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Profile</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">{{ teacher.full_name }}</h1>
+  <p class="mt-1 text-sm text-zinc-500">{{ teacher.specialization|default:"Teacher" }} · {{ teacher.employee_no }}</p>
+
+  {% if messages %}{% for m in messages %}<div class="mt-4 rounded-md bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ m }}</div>{% endfor %}{% endif %}
+
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white rounded-lg border border-zinc-200 p-5">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500 mb-3">Personal details</div>
+      <ul class="text-sm space-y-2 text-zinc-700">
+        <li><span class="text-zinc-500">Email:</span> {{ teacher.email|default:"—" }}</li>
+        <li><span class="text-zinc-500">Phone:</span> {{ teacher.phone|default:"—" }}</li>
+        <li><span class="text-zinc-500">Hired:</span> {{ teacher.hire_date|default:"—" }}</li>
+        <li><span class="text-zinc-500">Qualification:</span> {{ teacher.qualification|default:"—" }}</li>
+      </ul>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-5 md:col-span-2">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500 mb-3">Quick actions</div>
+      <a href="/api/teacher/leave/" data-testid="apply-leave-btn"
+        class="inline-flex items-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
+        <i class="ph-bold ph-airplane-tilt mr-2"></i> Apply for leave
+      </a>
+    </div>
+  </div>
+
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+      <h3 class="font-display font-semibold text-zinc-900"><i class="ph-bold ph-money mr-1"></i> My payslips</h3>
+    </div>
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50/60 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Month</th>
+        <th class="px-5 py-2 text-right">Basic</th>
+        <th class="px-5 py-2 text-right">Bonus</th>
+        <th class="px-5 py-2 text-right">Deductions</th>
+        <th class="px-5 py-2 text-center">Status</th>
+        <th class="px-5 py-2 text-center">PDF</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for p in payslips %}
+        <tr><td class="px-5 py-3 font-medium">{{ p.month }}</td>
+          <td class="px-5 py-3 text-right tabular-nums">{{ p.amount|floatformat:2|intcomma }}</td>
+          <td class="px-5 py-3 text-right tabular-nums text-emerald-700">{{ p.bonus|floatformat:2|intcomma }}</td>
+          <td class="px-5 py-3 text-right tabular-nums text-red-700">{{ p.deductions|floatformat:2|intcomma }}</td>
+          <td class="px-5 py-3 text-center">
+            {% if p.status == "paid" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Paid</span>
+            {% else %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">Pending</span>{% endif %}
+          </td>
+          <td class="px-5 py-3 text-center">
+            <a href="/api/hr/payslip/{{ p.id }}.pdf" class="text-blue-600 hover:underline text-xs"><i class="ph ph-file-pdf"></i> PDF</a>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="px-5 py-8 text-center text-zinc-500">No payslips yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+        <h3 class="font-display font-semibold text-zinc-900"><i class="ph-bold ph-graduation-cap mr-1"></i> Training history</h3>
+      </div>
+      <ul class="divide-y divide-zinc-100 text-sm">
+        {% for e in enrollments %}
+        <li class="px-5 py-3 flex items-center justify-between">
+          <div>
+            <div class="font-medium">{{ e.program.title }}</div>
+            <div class="text-xs text-zinc-500">{{ e.program.start_date }} → {{ e.program.end_date }}</div>
+          </div>
+          <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-zinc-100 capitalize">{{ e.get_status_display }}</span>
+        </li>
+        {% empty %}<li class="px-5 py-6 text-zinc-500 text-sm text-center">No training enrolments yet.</li>{% endfor %}
+      </ul>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+        <h3 class="font-display font-semibold text-zinc-900"><i class="ph-bold ph-airplane-tilt mr-1"></i> Leave requests</h3>
+      </div>
+      <ul class="divide-y divide-zinc-100 text-sm">
+        {% for l in leaves %}
+        <li class="px-5 py-3 flex items-center justify-between">
+          <div>
+            <div class="font-medium">{{ l.get_leave_type_display }}</div>
+            <div class="text-xs text-zinc-500">{{ l.start_date }} → {{ l.end_date }}</div>
+          </div>
+          <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium capitalize
+            {% if l.status == 'approved' %}bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200
+            {% elif l.status == 'rejected' %}bg-red-50 text-red-700 ring-1 ring-red-200
+            {% else %}bg-amber-50 text-amber-700 ring-1 ring-amber-200{% endif %}">{{ l.get_status_display }}</span>
+        </li>
+        {% empty %}<li class="px-5 py-6 text-zinc-500 text-sm text-center">No leave requests yet.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</main>
+{% endblock %}

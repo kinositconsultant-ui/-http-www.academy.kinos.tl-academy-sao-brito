@@ -1,0 +1,94 @@
+{% extends "teacher_base.html" %}
+{% block title %}Teacher Portal{% endblock %}
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="teacher-dashboard">
+  {% if messages %}{% for m in messages %}<div class="mb-4 rounded-md bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">{{ m }}</div>{% endfor %}{% endif %}
+
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Welcome</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">{{ teacher.full_name }}</h1>
+  <p class="mt-1 text-sm text-zinc-500">{{ teacher.specialization|default:"Teacher" }} · {{ teacher.employee_no }}</p>
+
+  <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-5">
+    <div class="bg-white rounded-lg border border-zinc-200 p-5" data-testid="kpi-classes">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">My Classes</div>
+      <div class="mt-2 text-3xl font-display font-bold tabular-nums">{{ n_classes }}</div>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-5" data-testid="kpi-subjects">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Subjects I Teach</div>
+      <div class="mt-2 text-3xl font-display font-bold tabular-nums">{{ n_subjects }}</div>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-5" data-testid="kpi-students">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Students Under Me</div>
+      <div class="mt-2 text-3xl font-display font-bold tabular-nums">{{ n_students }}</div>
+    </div>
+    <div class="bg-white rounded-lg border border-zinc-200 p-5" data-testid="kpi-att">
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500">Today's Attendance</div>
+      <div class="mt-2 text-3xl font-display font-bold tabular-nums">{% if today_pct is None %}—{% else %}{{ today_pct }}%{% endif %}</div>
+      <div class="text-xs text-zinc-500 mt-1">{{ today_present }} / {{ today_total }} marked</div>
+    </div>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <a href="/api/teacher/attendance/" class="bg-white rounded-lg border border-zinc-200 p-5 hover:border-red-300 hover:shadow-sm transition">
+      <div class="text-[11px] uppercase tracking-widest text-red-700">Quick action</div>
+      <div class="mt-1 font-display text-lg font-bold text-zinc-900">Mark today's attendance</div>
+      <div class="text-xs text-zinc-500 mt-1">For one of your classes →</div>
+    </a>
+    <a href="/api/teacher/grades/" class="bg-white rounded-lg border border-zinc-200 p-5 hover:border-red-300 hover:shadow-sm transition">
+      <div class="text-[11px] uppercase tracking-widest text-red-700">Quick action</div>
+      <div class="mt-1 font-display text-lg font-bold text-zinc-900">Enter / edit grades</div>
+      <div class="text-xs text-zinc-500 mt-1">By subject + term →</div>
+    </a>
+    <a href="/api/teacher/evaluations/add/" class="bg-white rounded-lg border border-zinc-200 p-5 hover:border-red-300 hover:shadow-sm transition">
+      <div class="text-[11px] uppercase tracking-widest text-red-700">Quick action</div>
+      <div class="mt-1 font-display text-lg font-bold text-zinc-900">Write evaluation / advice</div>
+      <div class="text-xs text-zinc-500 mt-1">Parents will see it →</div>
+    </a>
+  </div>
+
+  <!-- My subjects -->
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+      <h3 class="font-display font-semibold text-zinc-900">Subjects I teach</h3>
+    </div>
+    {% if my_subjects %}
+    <table class="min-w-full text-sm">
+      <thead class="bg-zinc-50/60 text-xs uppercase tracking-wider text-zinc-500"><tr>
+        <th class="px-5 py-2 text-left">Subject</th>
+        <th class="px-5 py-2 text-left">Code</th>
+        <th class="px-5 py-2 text-left">Class</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for s in my_subjects %}
+        <tr><td class="px-5 py-3 font-medium">{{ s.name }}</td>
+          <td class="px-5 py-3 font-mono text-xs text-zinc-600">{{ s.code }}</td>
+          <td class="px-5 py-3 text-zinc-600">{{ s.school_class|default:"—" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-8 text-center text-zinc-500 text-sm">You don't have any subjects assigned yet — ask an admin to assign you to subjects.</div>
+    {% endif %}
+  </div>
+
+  <!-- Recent grades I entered -->
+  <div class="mt-8 bg-white rounded-lg border border-zinc-200 overflow-hidden">
+    <div class="px-5 py-4 border-b border-zinc-200 bg-zinc-50">
+      <h3 class="font-display font-semibold text-zinc-900">Recent grades I entered</h3>
+    </div>
+    <ul class="divide-y divide-zinc-100">
+      {% for g in recent_grades %}
+      <li class="px-5 py-3 flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium text-zinc-900">{{ g.student.full_name }} · {{ g.subject.name }}</div>
+          <div class="text-xs text-zinc-500">{{ g.exam_name }} · {{ g.recorded_at|date:"Y-m-d" }}</div>
+        </div>
+        <div class="text-sm tabular-nums font-semibold {% if g.is_pass %}text-emerald-700{% else %}text-red-700{% endif %}">
+          {{ g.percentage }}% · {{ g.letter }}
+        </div>
+      </li>
+      {% empty %}<li class="px-5 py-6 text-zinc-500 text-sm">No grades entered yet.</li>{% endfor %}
+    </ul>
+  </div>
+</main>
+{% endblock %}

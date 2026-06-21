@@ -1,0 +1,14 @@
+{% extends "teacher_base.html" %}
+{% block portal_content %}
+<main class="max-w-3xl mx-auto px-6 py-20" data-testid="teacher-no-link">
+  <div class="bg-white rounded-lg border border-amber-200 p-10 text-center">
+    <div class="mx-auto h-14 w-14 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+      <i class="ph ph-warning-circle text-3xl text-amber-600"></i>
+    </div>
+    <h1 class="font-display text-2xl font-bold text-zinc-900">Teacher profile not linked</h1>
+    <p class="mt-2 text-sm text-zinc-500 max-w-md mx-auto">
+      Your login (<span class="font-mono">{{ user.username }}</span>) is not yet linked to a teacher record. Please ask the administration to link it.
+    </p>
+  </div>
+</main>
+{% endblock %}

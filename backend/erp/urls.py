@@ -4,10 +4,22 @@ from . import views
 from . import portal_views
 from . import student_views
 from . import hr_views
+from . import teacher_views
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/api/dashboard/", permanent=False)),
     path("dashboard/", views.dashboard, name="dashboard"),
+
+    # Teacher portal
+    path("teacher/", teacher_views.teacher_dashboard, name="teacher_dashboard"),
+    path("teacher/attendance/", teacher_views.teacher_attendance, name="teacher_attendance"),
+    path("teacher/grades/", teacher_views.teacher_grades, name="teacher_grades"),
+    path("teacher/evaluations/", teacher_views.teacher_evaluations, name="teacher_evaluations"),
+    path("teacher/evaluations/add/", teacher_views.teacher_evaluation_add, name="teacher_evaluation_add"),
+    path("teacher/evaluations/<int:pk>/delete/", teacher_views.teacher_evaluation_delete, name="teacher_evaluation_delete"),
+    path("teacher/profile/", teacher_views.teacher_profile, name="teacher_profile"),
+    path("teacher/leave/", teacher_views.teacher_leave_request, name="teacher_leave_request"),
+    path("teachers/<int:pk>/create-login/", teacher_views.create_teacher_login, name="teacher_create_login"),
 
     # HR module
     path("hr/", hr_views.hr_dashboard, name="hr_dashboard"),
