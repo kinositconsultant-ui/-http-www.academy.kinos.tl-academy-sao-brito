@@ -1,0 +1,23 @@
+{% extends base_template %}
+{% block title %}Lesson plans{% endblock %}
+{% block crumb %}Academics · Lesson Plans{% endblock %}
+{% block page_title %}Lesson Plans{% endblock %}
+{% block topbar_actions %}
+{% if can_manage %}
+<a href="/api/lesson-plans/add/" data-testid="add-lesson-plan-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800">
+  <i class="ph-bold ph-plus mr-2"></i> New lesson plan
+</a>{% endif %}
+{% endblock %}
+{% block content %}{% include "erp/academy/_lesson_plan_body.html" %}{% endblock %}
+{% block portal_content %}
+<div class="max-w-6xl mx-auto px-6 py-8 space-y-4">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <h1 class="font-display text-2xl font-semibold text-zinc-900">Lesson Plans</h1>
+    {% if can_manage %}
+    <a href="/api/lesson-plans/add/" data-testid="add-lesson-plan-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800">
+      <i class="ph-bold ph-plus mr-2"></i> New
+    </a>{% endif %}
+  </div>
+  {% include "erp/academy/_lesson_plan_body.html" %}
+</div>
+{% endblock %}

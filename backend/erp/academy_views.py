@@ -15,10 +15,12 @@ from accounts.models import School
 from .forms import (
     AssignmentForm, AssignmentGradeForm, StudentSubmissionForm,
     AnnouncementForm, CalendarEventForm,
+    StudentDocumentForm, LessonPlanForm,
 )
 from .models import (
     Assignment, AssignmentSubmission, Announcement, CalendarEvent,
     Student, Teacher, Grade, SchoolClass,
+    StudentDocument, LessonPlan,
 )
 
 
@@ -387,3 +389,178 @@ def event_delete(request, pk):
         return redirect("calendar_view")
     return render(request, "erp/confirm_delete.html",
                   {"object": obj, "back": "calendar_view"})
+
+
+
+# =====================================================================
+# Student Document Repository
+# =====================================================================
+
+def _can_view_student_docs(user, student):
+    role = getattr(user, "role", "")
+    if user.is_superuser or role in ("admin", "principal", "accountant", "hr"):
+        return True
+    if role == "parent" and student.parent_users.filter(id=user.id).exists():
+        return True
+    if role == "student" and student.student_user_id == user.id:
+        return True
+    return False
+
+
+@login_required
+def student_docs_list(request, student_id):
+    student = get_object_or_404(Student, pk=student_id)
+    if not _can_view_student_docs(request.user, student):
+        return HttpResponseForbidden("Not allowed.")
+    docs = student.documents.select_related("uploaded_by").all()
+    return render(request, "erp/academy/student_docs.html", {
+        "student": student, "docs": docs,
+        "base_template": _base_template_for(request.user),
+        "school": School.get_active(),
+    })
+
+
+@login_required
+def student_doc_add(request, student_id):
+    student = get_object_or_404(Student, pk=student_id)
+    if not _can_view_student_docs(request.user, student):
+        return HttpResponseForbidden("Not allowed.")
+    form = StudentDocumentForm(request.POST or None, request.FILES or None)
+    if form.is_valid():
+        d = form.save(commit=False)
+        d.student = student
+        d.uploaded_by = request.user
+        d.save()
+        messages.success(request, f"Document '{d.display_title}' uploaded.")
+        return redirect("student_docs_list", student_id=student.id)
+    return render(request, "erp/form.html", {
+        "form": form, "title": f"Upload document — {student.full_name}",
+        "back": f"/api/students/{student.id}/documents/"})
+
+
+@login_required
+def student_doc_delete(request, pk):
+    d = get_object_or_404(StudentDocument, pk=pk)
+    if not _can_view_student_docs(request.user, d.student):
+        return HttpResponseForbidden("Not allowed.")
+    if request.method == "POST":
+        sid = d.student.id
+        d.delete()
+        messages.success(request, "Document deleted.")
+        return redirect("student_docs_list", student_id=sid)
+    return render(request, "erp/confirm_delete.html",
+                  {"object": d, "back": f"/api/students/{d.student.id}/documents/"})
+
+
+# =====================================================================
+# Lesson Plans
+# =====================================================================
+
+@login_required
+def lesson_plan_list(request):
+    u = request.user
+    qs = LessonPlan.objects.select_related("teacher", "subject", "class_room")
+    role = getattr(u, "role", "")
+    if u.is_superuser or role in ("admin", "principal"):
+        pass
+    elif role == "teacher":
+        t = Teacher.objects.filter(teacher_user=u).first()
+        qs = qs.filter(teacher=t) if t else qs.none()
+    elif role == "student":
+        st = Student.objects.filter(student_user=u).first()
+        qs = qs.filter(class_room=st.school_class, is_published=True) if st else qs.none()
+    elif role == "parent":
+        class_ids = list(Student.objects.filter(parent_users=u)
+                         .values_list("school_class_id", flat=True))
+        qs = qs.filter(class_room_id__in=class_ids, is_published=True)
+    else:
+        return HttpResponseForbidden("Not allowed.")
+    return render(request, "erp/academy/lesson_plan_list.html", {
+        "items": qs, "school": School.get_active(),
+        "base_template": _base_template_for(u),
+        "can_manage": u.is_superuser or role in ("teacher", "admin", "principal"),
+    })
+
+
+@login_required
+def lesson_plan_create(request):
+    u = request.user
+    if not _is_teacher(u):
+        return HttpResponseForbidden("Teachers / admins only.")
+    initial = {}
+    if getattr(u, "role", "") == "teacher":
+        t = Teacher.objects.filter(teacher_user=u).first()
+        if t:
+            initial["subject"] = t.subjects.first()
+    form = LessonPlanForm(request.POST or None, request.FILES or None, initial=initial)
+    if form.is_valid():
+        plan = form.save(commit=False)
+        if getattr(u, "role", "") == "teacher":
+            t = Teacher.objects.filter(teacher_user=u).first()
+            if t:
+                plan.teacher = t
+        else:
+            plan.teacher = (form.cleaned_data["subject"].teachers.first()
+                            or Teacher.objects.first())
+        plan.save()
+        messages.success(request, f"Lesson plan '{plan.title}' saved.")
+        return redirect("lesson_plan_list")
+    return render(request, "erp/form.html", {
+        "form": form, "title": "New lesson plan", "back": "lesson_plan_list"})
+
+
+@login_required
+def lesson_plan_delete(request, pk):
+    plan = get_object_or_404(LessonPlan, pk=pk)
+    u = request.user
+    role = getattr(u, "role", "")
+    if not (u.is_superuser or role in ("admin", "principal")
+            or (role == "teacher" and plan.teacher.teacher_user_id == u.id)):
+        return HttpResponseForbidden("Not allowed.")
+    if request.method == "POST":
+        plan.delete()
+        messages.success(request, "Lesson plan deleted.")
+        return redirect("lesson_plan_list")
+    return render(request, "erp/confirm_delete.html",
+                  {"object": plan, "back": "lesson_plan_list"})
+
+
+# =====================================================================
+# Today / This-week widget data
+# =====================================================================
+
+def today_widget_context(user):
+    """Reusable: events + announcements + assignments pertinent to this user
+    for the overview widget on every portal."""
+    from datetime import timedelta
+    today = timezone.now().date()
+    next_week = today + timedelta(days=7)
+
+    events_qs = CalendarEvent.objects.filter(start_at__date__gte=today,
+                                             start_at__date__lte=next_week)
+    ann_qs = Announcement.objects.filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gte=timezone.now())
+    )
+    if not (user.is_superuser or getattr(user, "role", "") in ("admin", "principal")):
+        events_qs = _filter_for_user(events_qs, user)
+        ann_qs = _filter_for_user(ann_qs, user)
+
+    today_events = [e for e in events_qs if e.start_at.date() == today]
+    week_events = [e for e in events_qs if e.start_at.date() > today][:5]
+
+    upcoming_assignments = []
+    if getattr(user, "role", "") == "student":
+        st = Student.objects.filter(student_user=user).first()
+        if st:
+            upcoming_assignments = list(Assignment.objects.filter(
+                class_room=st.school_class, is_published=True,
+                due_at__gte=timezone.now()
+            ).order_by("due_at")[:3])
+
+    return {
+        "today_events": today_events,
+        "week_events": week_events,
+        "recent_announcements": list(ann_qs.order_by("-is_pinned", "-published_at")[:3]),
+        "upcoming_assignments": upcoming_assignments,
+        "widget_today": today,
+    }

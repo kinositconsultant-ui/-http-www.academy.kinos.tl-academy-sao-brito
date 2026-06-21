@@ -8,6 +8,8 @@
   <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">{{ teacher.full_name }}</h1>
   <p class="mt-1 text-sm text-zinc-500">{{ teacher.specialization|default:"Teacher" }} · {{ teacher.employee_no }}</p>
 
+  <div class="mt-6">{% include "erp/academy/_today_widget.html" %}</div>
+
   <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-5">
     <div class="bg-white rounded-lg border border-zinc-200 p-5" data-testid="kpi-classes">
       <div class="text-[11px] uppercase tracking-widest text-zinc-500">My Classes</div>

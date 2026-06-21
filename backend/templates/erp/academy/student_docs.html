@@ -1,0 +1,23 @@
+{% extends base_template %}
+{% block title %}Documents · {{ student.full_name }}{% endblock %}
+{% block crumb %}Students · {{ student.full_name }} · Documents{% endblock %}
+{% block page_title %}Documents · {{ student.full_name }}{% endblock %}
+{% block topbar_actions %}
+<a href="/api/students/{{ student.id }}/documents/add/" data-testid="upload-student-doc-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800">
+  <i class="ph-bold ph-upload mr-2"></i> Upload document
+</a>{% endblock %}
+{% block content %}{% include "erp/academy/_student_docs_body.html" %}{% endblock %}
+{% block portal_content %}
+<div class="max-w-6xl mx-auto px-6 py-8 space-y-4">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-semibold text-zinc-900">Documents</h1>
+      <p class="text-sm text-zinc-500">{{ student.full_name }} · {{ student.admission_no }} · {{ student.school_class }}</p>
+    </div>
+    <a href="/api/students/{{ student.id }}/documents/add/" data-testid="upload-student-doc-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800">
+      <i class="ph-bold ph-upload mr-2"></i> Upload document
+    </a>
+  </div>
+  {% include "erp/academy/_student_docs_body.html" %}
+</div>
+{% endblock %}

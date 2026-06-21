@@ -88,11 +88,34 @@ def _gate(request):
 
 @login_required
 def teacher_dashboard(request):
-    """Legacy overview — now redirects straight to Attendance (the daily task)."""
+    """Teacher overview — KPIs + Today/This week widget + quick links."""
     teacher, redir = _gate(request)
     if redir:
         return redir
-    return redirect("/api/teacher/attendance/")
+    from .academy_views import today_widget_context
+    my_subjects = list(_my_subjects(teacher))
+    my_classes = _my_classes(teacher)
+    my_students = _my_students(teacher)
+    today = date.today()
+    att_today = Attendance.objects.filter(
+        date=today,
+        student__in=my_students,
+    )
+    today_total = att_today.count()
+    today_present = att_today.filter(status="present").count()
+    today_pct = round(100 * today_present / today_total, 1) if today_total else None
+    recent_grades = (Grade.objects.filter(student__in=my_students)
+                     .select_related("student", "subject")
+                     .order_by("-recorded_at")[:10])
+    return render(request, "erp/teacher_dashboard.html", {
+        "teacher": teacher, "school": School.get_active(),
+        "my_subjects": my_subjects, "my_classes": my_classes,
+        "n_subjects": len(my_subjects), "n_classes": my_classes.count(),
+        "n_students": my_students.count(),
+        "today_total": today_total, "today_present": today_present, "today_pct": today_pct,
+        "recent_grades": recent_grades,
+        **today_widget_context(request.user),
+    })
 
 
 @login_required

@@ -18,6 +18,10 @@
     <i class="ph-bold ph-file-pdf mr-2"></i> Report Card PDF
   </button>
 </form>
+<a href="/api/students/{{ student.id }}/documents/" data-testid="student-docs-btn"
+  class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-zinc-900 ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50">
+  <i class="ph-bold ph-folder mr-2"></i> Documents
+</a>
 <a href="/api/students/{{ student.id }}/edit/" data-testid="edit-student-detail-btn"
   class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
   <i class="ph-bold ph-pencil-simple mr-2"></i> Edit

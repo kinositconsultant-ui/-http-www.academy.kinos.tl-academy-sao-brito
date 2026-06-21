@@ -958,3 +958,84 @@ class CalendarEvent(models.Model):
     def color(self):
         return self.TYPE_COLORS.get(self.event_type, "#52525b")
 
+
+
+# =====================================================================
+# Phase 2 — Student Document Repository + Lesson Plans (2026-02)
+# =====================================================================
+
+class StudentDocument(models.Model):
+    DOC_TYPES = [
+        ("bi", "BI / Electoral Card"),
+        ("birth", "Birth Certificate"),
+        ("baptism", "Baptism Certificate"),
+        ("vaccination", "Vaccination Card"),
+        ("passport", "Passport"),
+        ("transfer", "Transfer Certificate"),
+        ("prior_report", "Previous School Report"),
+        ("photo", "ID Photo"),
+        ("parent_id", "Parent Identification"),
+        ("other", "Other"),
+    ]
+    student = models.ForeignKey(Student, on_delete=models.CASCADE,
+                                related_name="documents")
+    doc_type = models.CharField(max_length=20, choices=DOC_TYPES, default="other")
+    title = models.CharField(max_length=160, blank=True,
+                             help_text="Optional descriptive label (e.g. 'BI 2024')")
+    file = models.FileField(upload_to="student_docs/")
+    issued_date = models.DateField(null=True, blank=True)
+    expires_at = models.DateField(null=True, blank=True,
+                                  help_text="Useful for BI / Passport — flags expiring docs.")
+    notes = models.TextField(blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="uploaded_student_docs")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at", "-id"]
+
+    def __str__(self):
+        return f"{self.student.full_name} — {self.get_doc_type_display()}"
+
+    @property
+    def display_title(self):
+        return self.title or self.get_doc_type_display()
+
+    @property
+    def expiring_soon(self):
+        if not self.expires_at:
+            return False
+        from datetime import timedelta, date
+        return self.expires_at <= date.today() + timedelta(days=30)
+
+
+class LessonPlan(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE,
+                                related_name="lesson_plans")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE,
+                                related_name="lesson_plans")
+    class_room = models.ForeignKey(SchoolClass, on_delete=models.CASCADE,
+                                   related_name="lesson_plans")
+    title = models.CharField(max_length=160)
+    title_pt = models.CharField(max_length=160, blank=True)
+    title_tet = models.CharField(max_length=160, blank=True)
+    week_start = models.DateField(help_text="Monday of the week this plan covers.")
+    objectives = models.TextField(blank=True,
+                                  help_text="Learning objectives for the week.")
+    activities = models.TextField(blank=True,
+                                  help_text="Topics and activities, day-by-day if useful.")
+    materials = models.TextField(blank=True,
+                                 help_text="Books, handouts, equipment.")
+    file = models.FileField(upload_to="lesson_plans/", null=True, blank=True,
+                            help_text="Optional PDF / document upload.")
+    is_published = models.BooleanField(default=True,
+                                       help_text="Hide drafts from admin/principal view.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-week_start", "-id"]
+
+    def __str__(self):
+        return f"{self.title} — {self.class_room} ({self.week_start})"

@@ -7,6 +7,7 @@ from .models import (
     PerformanceReview, EmployeeAttendance, InventoryCategory, InventoryItem,
     InventoryAssignment, TeachingDocument,
     Assignment, AssignmentSubmission, Announcement, CalendarEvent,
+    StudentDocument, LessonPlan,
 )
 
 
@@ -315,5 +316,36 @@ class CalendarEventForm(forms.ModelForm):
             "start_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "end_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "audience_classes": forms.CheckboxSelectMultiple,
+        }
+
+
+
+class StudentDocumentForm(forms.ModelForm):
+    class Meta:
+        model = StudentDocument
+        fields = ["doc_type", "title", "file", "issued_date", "expires_at", "notes"]
+        widgets = {
+            "issued_date": _DATE,
+            "expires_at": _DATE,
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+        help_texts = {
+            "title": "Optional. Defaults to the document type if blank.",
+            "expires_at": "Optional. Documents in the next 30 days are flagged on the student profile.",
+        }
+
+
+class LessonPlanForm(forms.ModelForm):
+    class Meta:
+        model = LessonPlan
+        fields = ["title", "title_pt", "title_tet",
+                  "subject", "class_room", "week_start",
+                  "objectives", "activities", "materials",
+                  "file", "is_published"]
+        widgets = {
+            "week_start": _DATE,
+            "objectives": forms.Textarea(attrs={"rows": 3}),
+            "activities": forms.Textarea(attrs={"rows": 4}),
+            "materials": forms.Textarea(attrs={"rows": 2}),
         }
 

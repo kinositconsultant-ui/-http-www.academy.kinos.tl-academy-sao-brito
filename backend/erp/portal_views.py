@@ -43,7 +43,11 @@ def parent_dashboard(request):
         balance = (outstanding["amt"] or 0) - (outstanding["paid"] or 0)
         latest_grades = c.grades.select_related("subject").order_by("-recorded_at")[:3]
         rows.append({"student": c, "balance": balance, "grades": latest_grades})
-    return render(request, "erp/parent_dashboard.html", {"rows": rows})
+    from .academy_views import today_widget_context
+    return render(request, "erp/parent_dashboard.html", {
+        "rows": rows,
+        **today_widget_context(request.user),
+    })
 
 
 @login_required

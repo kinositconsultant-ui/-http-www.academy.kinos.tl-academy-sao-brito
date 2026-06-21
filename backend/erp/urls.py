@@ -212,4 +212,13 @@ urlpatterns = [
     path("calendar/", academy_views.calendar_view, name="calendar_view"),
     path("calendar/add/", academy_views.event_create, name="event_create"),
     path("calendar/<int:pk>/delete/", academy_views.event_delete, name="event_delete"),
+
+    # Phase 2 — Student Documents & Lesson Plans
+    path("students/<int:student_id>/documents/", academy_views.student_docs_list, name="student_docs_list"),
+    path("students/<int:student_id>/documents/add/", academy_views.student_doc_add, name="student_doc_add"),
+    path("student-documents/<int:pk>/delete/", academy_views.student_doc_delete, name="student_doc_delete"),
+
+    path("lesson-plans/", academy_views.lesson_plan_list, name="lesson_plan_list"),
+    path("lesson-plans/add/", academy_views.lesson_plan_create, name="lesson_plan_create"),
+    path("lesson-plans/<int:pk>/delete/", academy_views.lesson_plan_delete, name="lesson_plan_delete"),
 ]

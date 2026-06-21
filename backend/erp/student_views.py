@@ -104,6 +104,7 @@ def student_dashboard(request):
     # Earned credit = 1 per distinct passed subject (latest attempt is pass)
     credits_earned = len({g.subject_id for g in student.grades.all() if g.is_pass})
     credit_notes = student.credit_notes.all()[:5]
+    from .academy_views import today_widget_context
     return render(request, "erp/student_dashboard.html", {
         "student": student,
         "school": School.get_active(),
@@ -116,6 +117,7 @@ def student_dashboard(request):
         "to_repeat": to_repeat,
         "credits_earned": credits_earned,
         "credit_notes": credit_notes,
+        **today_widget_context(request.user),
     })
 
 

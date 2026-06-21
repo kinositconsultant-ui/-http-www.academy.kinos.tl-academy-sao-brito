@@ -10,6 +10,8 @@
   <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">Your Children</h1>
   <p class="mt-2 text-sm text-zinc-500">Review grades, attendance, and pay outstanding invoices online.</p>
 
+  <div class="mt-6">{% include "erp/academy/_today_widget.html" %}</div>
+
   {% if rows %}
   <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="parent-children-grid">
     {% for r in rows %}

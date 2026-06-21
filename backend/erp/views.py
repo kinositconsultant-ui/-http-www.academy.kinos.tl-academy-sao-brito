@@ -193,6 +193,7 @@ def dashboard(request):
         selected_year = current_year
 
     kpis = {**_count_kpis(), **_money_kpis(month_start)}
+    from .academy_views import today_widget_context
     ctx = {
         "kpis": kpis,
         "current_year": current_year,
@@ -202,6 +203,7 @@ def dashboard(request):
         "top_by_year": _top_by_year(),
         "good_students": _good_students_leaderboard(limit=10, year=selected_year),
         **_recent_activity(),
+        **today_widget_context(request.user),
     }
     return render(request, "erp/dashboard.html", ctx)
 
