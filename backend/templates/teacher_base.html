@@ -24,25 +24,21 @@
     <nav class="bg-zinc-800/80 border-t border-white/5">
       <div class="max-w-6xl mx-auto px-6 flex items-center gap-1 text-sm overflow-x-auto">
         {% with rp=request.path %}
-        <a href="/api/teacher/" data-testid="teacher-nav-dashboard"
-          class="px-3 py-3 border-b-2 {% if rp == '/api/teacher/' %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
-          <i class="ph ph-house mr-1"></i> Overview
-        </a>
         <a href="/api/teacher/attendance/" data-testid="teacher-nav-attendance"
           class="px-3 py-3 border-b-2 {% if '/attendance/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
-          <i class="ph ph-calendar-check mr-1"></i> Attendance
+          <i class="ph ph-calendar-check mr-1"></i> Mark Attendance
         </a>
         <a href="/api/teacher/grades/" data-testid="teacher-nav-grades"
           class="px-3 py-3 border-b-2 {% if '/grades/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
-          <i class="ph ph-chart-line mr-1"></i> Grades
+          <i class="ph ph-chart-line mr-1"></i> Enter Grades
         </a>
         <a href="/api/teacher/evaluations/" data-testid="teacher-nav-evals"
           class="px-3 py-3 border-b-2 {% if '/evaluations' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
-          <i class="ph ph-chat-circle-text mr-1"></i> Evaluations & Advice
+          <i class="ph ph-chat-circle-text mr-1"></i> Evaluations
         </a>
-        <a href="/api/teacher/profile/" data-testid="teacher-nav-profile"
-          class="px-3 py-3 border-b-2 {% if '/profile/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
-          <i class="ph ph-user mr-1"></i> My Profile
+        <a href="/api/teacher/students/" data-testid="teacher-nav-students"
+          class="px-3 py-3 border-b-2 {% if '/students/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-users-three mr-1"></i> My Students
         </a>
         {% endwith %}
       </div>

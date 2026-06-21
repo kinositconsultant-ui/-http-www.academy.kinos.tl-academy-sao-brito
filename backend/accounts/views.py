@@ -19,7 +19,7 @@ def post_login_redirect(request):
         if u.role == "student":
             return redirect("/api/student/")
         if u.role == "teacher":
-            return redirect("/api/teacher/")
+            return redirect("/api/teacher/attendance/")
     return redirect("/api/dashboard/")
 
 

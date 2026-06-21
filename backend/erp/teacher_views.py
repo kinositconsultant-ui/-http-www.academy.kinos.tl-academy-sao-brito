@@ -71,35 +71,35 @@ def _gate(request):
 
 @login_required
 def teacher_dashboard(request):
+    """Legacy overview — now redirects straight to Attendance (the daily task)."""
     teacher, redir = _gate(request)
     if redir:
         return redir
-    today = date.today()
-    my_classes = _my_classes(teacher)
-    my_subjects = _my_subjects(teacher)
-    my_students = _my_students(teacher)
-    # Today's attendance %
-    today_att = Attendance.objects.filter(
-        student__in=my_students, date=today)
-    today_total = today_att.count()
-    today_present = today_att.filter(status="present").count()
-    today_pct = round(100 * today_present / today_total, 1) if today_total else None
-    # Recent grades I entered (by this teacher's subjects)
-    recent_grades = (Grade.objects.filter(subject__in=my_subjects)
-                     .select_related("student", "subject")
-                     .order_by("-recorded_at")[:5])
-    pending_evals = StudentEvaluation.objects.filter(teacher=teacher).count()
-    return render(request, "erp/teacher_dashboard.html", {
-        "teacher": teacher,
-        "school": School.get_active(),
-        "n_classes": my_classes.count(),
-        "n_subjects": my_subjects.count(),
-        "n_students": my_students.count(),
-        "today_pct": today_pct,
-        "today_present": today_present, "today_total": today_total,
-        "recent_grades": recent_grades,
-        "pending_evals": pending_evals,
-        "my_subjects": my_subjects,
+    return redirect("/api/teacher/attendance/")
+
+
+@login_required
+def teacher_students(request):
+    """Read-only roster of every student in the subjects I teach."""
+    teacher, redir = _gate(request)
+    if redir:
+        return redir
+    students = list(_my_students(teacher).order_by(
+        "school_class__name", "first_name"))
+    # Compute attendance % per student
+    today_year = date.today().year
+    rows = []
+    for s in students:
+        att = s.attendance.filter(date__year=today_year)
+        total = att.count()
+        present = att.filter(status="present").count()
+        att_pct = round(100 * present / total, 1) if total else None
+        avg = s.grades.aggregate(a=Avg("score"))["a"]
+        rows.append({"student": s, "att_pct": att_pct,
+                     "avg": round(float(avg), 1) if avg else None})
+    return render(request, "erp/teacher_students.html", {
+        "teacher": teacher, "school": School.get_active(),
+        "rows": rows, "subjects": _my_subjects(teacher),
     })
 
 
