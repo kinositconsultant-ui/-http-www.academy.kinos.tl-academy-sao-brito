@@ -145,6 +145,7 @@ urlpatterns = [
     path("invoices/<int:pk>/delete/", views.invoice_delete, name="invoice_delete"),
     path("invoices/<int:pk>/pdf/", views.invoice_pdf, name="invoice_pdf"),
     path("payments/<int:pk>/receipt.pdf", views.payment_receipt_pdf, name="payment_receipt_pdf"),
+    path("system-design/pdf/", views.system_design_pdf, name="system_design_pdf"),
 
     # Salaries
     path("salaries/", views.salary_list, name="salary_list"),

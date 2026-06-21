@@ -571,6 +571,18 @@ def invoice_delete(request, pk):
 
 
 @login_required
+def system_design_pdf(request):
+    """Download a branded PDF of the System Design document."""
+    from django.http import HttpResponse
+    from .system_design_pdf import build_system_design_pdf
+    from accounts.models import School as _School
+    pdf = build_system_design_pdf(_School.get_active())
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = 'attachment; filename="system_design.pdf"'
+    return resp
+
+
+@login_required
 def invoice_pdf(request, pk):
     """Download invoice as PDF (admin/accountant or the student's parent/self)."""
     from django.http import HttpResponse, HttpResponseForbidden
