@@ -34,7 +34,7 @@
             {% for s in d.subjects.all %}<span class="inline-flex rounded-md px-2 py-0.5 text-[10px] bg-zinc-100 mr-1">{{ s.name }}</span>{% endfor %}
           {% else %}<span class="text-emerald-700 text-[11px] font-medium">All teachers</span>{% endif %}
         </td>
-        <td class="px-6 py-3 text-zinc-600 text-xs">{{ d.uploaded_by.get_full_name|default:d.uploaded_by.username|default:"—" }}</td>
+        <td class="px-6 py-3 text-zinc-600 text-xs">{% if d.uploaded_by %}{{ d.uploaded_by.get_full_name|default:d.uploaded_by.username }}{% else %}—{% endif %}</td>
         <td class="px-6 py-3 text-zinc-600 text-xs">{{ d.uploaded_at|date:"Y-m-d H:i" }}</td>
         <td class="px-6 py-3 text-right">
           <a href="{{ d.file.url }}" target="_blank" class="text-blue-600 hover:underline text-sm mr-3">Open</a>
