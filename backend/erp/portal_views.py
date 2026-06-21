@@ -158,6 +158,7 @@ async def invoice_pay_online(request, pk):
         },
     )
 
+    session = None
     try:
         session = await checkout.create_checkout_session(req)
     except Exception as exc:  # noqa: BLE001
@@ -224,6 +225,7 @@ async def invoice_pay_crypto(request, pk):
         },
     )
 
+    session = None
     try:
         session = await checkout.create_checkout_session(req)
     except Exception as exc:  # noqa: BLE001
@@ -269,6 +271,7 @@ async def invoice_payment_status(request, pk):
         api_key=settings.STRIPE_API_KEY,
         webhook_url=f"{host_url}/api/webhook/stripe",
     )
+    live = None
     try:
         live = await checkout.get_checkout_status(tx.session_id)
     except Exception as exc:  # noqa: BLE001

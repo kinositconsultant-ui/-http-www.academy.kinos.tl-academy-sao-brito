@@ -217,6 +217,7 @@ def build_report_card(student, grades, school, academic_year, attendance_stats):
     `attendance_stats` is a dict {present, total} or None.
     """
     from .pdf_brand import header_block, make_footer_callback
+    from .models import Grade
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                             leftMargin=15 * mm, rightMargin=15 * mm,
@@ -231,8 +232,8 @@ def build_report_card(student, grades, school, academic_year, attendance_stats):
     for g in grades:
         by_sem[g.semester].append(g)
 
-    sem_order = [code for code, _ in __import__("erp").models.Grade.SEMESTER_CHOICES]
-    sem_labels = dict(__import__("erp").models.Grade.SEMESTER_CHOICES)
+    sem_order = [code for code, _ in Grade.SEMESTER_CHOICES]
+    sem_labels = dict(Grade.SEMESTER_CHOICES)
 
     # Overall stats
     flat = list(grades)
