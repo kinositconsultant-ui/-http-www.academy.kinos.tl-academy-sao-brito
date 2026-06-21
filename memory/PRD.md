@@ -70,6 +70,14 @@
     around Stripe checkout calls.
   - `report_card.py`: replaced dynamic `__import__("erp").models.Grade…`
     with a clean `from .models import Grade` local import.
+- **Phase 1 — Academy add-ons (2026-02-22)** — three new modules behind audience-aware filtering and trilingual (EN/PT/TET) title fields:
+  - **📝 Assignments** (`/api/assignments/`): admin / teacher create with subject + class + term (Term 1/2/3 added to grade choices) + due date + optional reference attachment. Students submit text **and/or** file via `/api/student/assignments/<id>/submit/`. Re-submission clears the previous grade. Teacher grades a submission and optionally promotes the score into the formal `Grade` table so it appears on the report-card PDF.
+  - **📢 Announcements** (`/api/announcements/`): admin posts with audience role (all/admin/teacher/parent/student) and optional class restriction. Optional `send_email=on` writes a `SentEmail` row per recipient via the existing SendGrid hook (LIVE if `SENDGRID_API_KEY` is set, else MOCKED). Pinned + expiring announcements supported.
+  - **📅 School Calendar** (`/api/calendar/`): admin posts events with type (holiday/exam/meeting/training/event/deadline), colour-coded, all-day or timed, with location and audience scoping. Read-only V1 for students/parents/teachers.
+  - Per-role base-template switch: `_base_template_for(user)` picks `dashboard_base` / `teacher_base` / `parent_base` / `student_base` so the same list templates render with the correct portal nav for each role.
+  - New navigation tabs wired into all four portals (admin sidebar adds "Assignments" + "Communication" section; student/teacher/parent topbars add "Notices" + "Calendar").
+  - Audience filter (`_filter_for_user`) intersects role + class so a Year-7 student does not see Year-10 assignments or audience='teacher' announcements.
+  - Regression suite: `/app/backend/tests/test_phase1_academy.py` — 20 pytest cases passing.
 - **High-complexity refactor pass (2026-02-22)** — Behavior-neutral split of
   two long view functions into focused helpers:
   - `hr_dashboard` → 7 helpers (`_workforce_stats`, `_payroll_stats`,

@@ -324,10 +324,15 @@ def calendar_view(request):
     if not _is_staff(u):
         qs = _filter_for_user(qs, u)
 
-    # Default month window
+    # Default month window — parse defensively so bad query strings don't 500.
     today = timezone.now().date()
-    month = int(request.GET.get("m") or today.month)
-    year = int(request.GET.get("y") or today.year)
+    try:
+        month = int(request.GET.get("m") or today.month)
+        year = int(request.GET.get("y") or today.year)
+    except (TypeError, ValueError):
+        month, year = today.month, today.year
+    if not (1 <= month <= 12):
+        month = today.month
     # range
     start = datetime.combine(today.replace(year=year, month=month, day=1), time.min)
     if month == 12:
