@@ -1,15 +1,17 @@
 {% extends "base.html" %}
 {% load humanize %}
+{% load static %}
 
 {% block body %}
-<div class="min-h-screen bg-zinc-50">
-  <header class="bg-zinc-900 text-white">
+<div class="min-h-screen flex flex-col bg-zinc-50">
+  <header class="bg-gradient-to-r from-red-900 via-red-800 to-zinc-900 text-white">
     <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-md bg-blue-600 flex items-center justify-center"><i class="ph-bold ph-student text-xl"></i></div>
-        <div>
-          <div class="font-display font-bold">{{ school.name|default:"Academy ERP" }}</div>
-          <div class="text-[10px] uppercase tracking-widest text-white/60">Student Portal</div>
+        <img src="{% static 'img/isjb-logo.jpg' %}" alt="ISJB crest"
+          class="h-12 w-12 rounded-md bg-white p-1 ring-1 ring-white/20 shadow-sm" data-testid="student-brand-logo" />
+        <div class="leading-tight">
+          <div class="font-display font-bold text-[15px]">{{ school.name|default:"Instituto São João de Brito" }}</div>
+          <div class="text-[10px] uppercase tracking-widest text-amber-300 italic">Student Portal · {{ school.motto|default:"Educar para Servir" }}</div>
         </div>
       </div>
       <div class="flex items-center gap-4 text-sm">
@@ -51,6 +53,7 @@
       </div>
     </nav>
   </header>
-  {% block portal_content %}{% endblock %}
+  <div class="flex-1">{% block portal_content %}{% endblock %}</div>
+  {% include "_footer.html" %}
 </div>
 {% endblock %}

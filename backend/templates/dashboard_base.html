@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 {% load humanize %}
+{% load static %}
 
 {% block body %}
 <div class="min-h-screen flex">
   <!-- Sidebar -->
   <aside class="fixed inset-y-0 left-0 w-64 bg-zinc-900 text-zinc-300 flex flex-col z-30">
-    <div class="h-16 flex items-center gap-3 px-5 border-b border-zinc-800">
-      <div class="h-9 w-9 rounded-md bg-blue-600 flex items-center justify-center">
-        <i class="ph-bold ph-graduation-cap text-white text-xl"></i>
-      </div>
-      <div>
-        <div class="text-white font-display font-bold leading-tight" data-testid="brand-name">{{ school.name|default:"Academy ERP" }}</div>
-        <div class="text-[10px] uppercase tracking-widest text-zinc-500">Enterprise Suite</div>
+    <div class="h-20 flex items-center gap-3 px-5 border-b border-zinc-800">
+      <img src="{% static 'img/isjb-logo.jpg' %}" alt="ISJB crest"
+        class="h-12 w-12 rounded-md bg-white p-1 ring-1 ring-white/10 shadow-sm" data-testid="sidebar-logo" />
+      <div class="leading-tight min-w-0">
+        <div class="text-white font-display font-bold text-[13px] truncate" data-testid="brand-name">{{ school.name|default:"Instituto São João de Brito" }}</div>
+        <div class="text-[10px] uppercase tracking-widest text-amber-400 italic truncate">{{ school.motto|default:"Educar para Servir" }}</div>
       </div>
     </div>
 
@@ -108,9 +108,9 @@
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-zinc-200 py-4 px-8 text-xs text-zinc-500 flex justify-between">
-      <span>© {{ school.name|default:"Academy ERP" }} · Built with Django</span>
-      <span class="font-display">v1.0 · Enterprise Edition</span>
+    <footer class="border-t border-zinc-200 py-4 px-8 text-xs text-zinc-500 flex flex-col md:flex-row md:justify-between gap-1">
+      <span>© {% now "Y" %} {{ school.name|default:"Instituto São João de Brito" }} · {{ school.motto|default:"Educar para Servir" }}</span>
+      <span class="font-display"><i class="ph ph-phone mr-1"></i>{{ school.phone|default:"+670 7775 4142" }} · <i class="ph ph-envelope-simple mr-1"></i>{{ school.email|default:"info@isjb.edu.tl" }}</span>
     </footer>
   </div>
 </div>

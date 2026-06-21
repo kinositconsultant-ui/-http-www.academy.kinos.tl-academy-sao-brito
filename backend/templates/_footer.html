@@ -1,0 +1,54 @@
+{% load static %}
+<footer class="mt-auto bg-zinc-900 text-zinc-300" data-testid="site-footer">
+  <div class="max-w-7xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8">
+    <div>
+      <div class="flex items-center gap-3">
+        <img src="{% static 'img/isjb-logo.jpg' %}" alt="ISJB" class="h-12 w-12 rounded-md bg-white p-1" />
+        <div>
+          <div class="font-display font-bold text-white text-base leading-tight">
+            {{ school.name|default:"Instituto São João de Brito" }}
+          </div>
+          <div class="text-[10px] uppercase tracking-widest text-amber-400 italic">
+            {{ school.motto|default:"Educar para Servir" }}
+          </div>
+        </div>
+      </div>
+      <p class="mt-4 text-xs text-zinc-400 leading-relaxed">
+        A Jesuit-inspired academy dedicated to forming students of competence,
+        conscience and compassion, ready to serve their community.
+      </p>
+    </div>
+
+    <div>
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500 mb-3">Visit us</div>
+      <p class="text-sm text-zinc-300 leading-relaxed">
+        {{ school.address|default:"Kasait, Ulmera, Sub-Distrito Bazartete<br/>Distrito de Liquiça, Timor-Leste"|safe }}
+      </p>
+    </div>
+
+    <div>
+      <div class="text-[11px] uppercase tracking-widest text-zinc-500 mb-3">Contact</div>
+      <ul class="text-sm space-y-2">
+        <li class="flex items-center gap-2">
+          <i class="ph ph-phone text-amber-400"></i>
+          <a href="tel:{{ school.phone|default:'+67077754142' }}" class="hover:text-white">
+            {{ school.phone|default:"+670 7775 4142" }}
+          </a>
+        </li>
+        <li class="flex items-center gap-2">
+          <i class="ph ph-envelope-simple text-amber-400"></i>
+          <a href="mailto:{{ school.email|default:'info@isjb.edu.tl' }}" class="hover:text-white">
+            {{ school.email|default:"info@isjb.edu.tl" }}
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="border-t border-zinc-800">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-2 text-[11px] text-zinc-500">
+      <span>© {% now "Y" %} {{ school.name|default:"Instituto São João de Brito" }} · All rights reserved.</span>
+      <span class="font-display">Enterprise Suite · v1.0</span>
+    </div>
+  </div>
+</footer>

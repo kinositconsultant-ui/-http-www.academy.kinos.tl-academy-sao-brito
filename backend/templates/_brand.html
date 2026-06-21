@@ -1,0 +1,21 @@
+{% load static %}
+{# Reusable brand block. Pass `size` (sm|md|lg) and `dark` (true|false) #}
+{% with size=size|default:"md" dark=dark|default:"false" %}
+<div class="flex items-center gap-3">
+  <img src="{% static 'img/isjb-logo.jpg' %}" alt="Instituto São João de Brito"
+    data-testid="brand-logo"
+    class="rounded-md bg-white shadow-sm ring-1 ring-zinc-200 object-contain
+      {% if size == 'sm' %}h-9 w-9{% elif size == 'lg' %}h-14 w-14{% else %}h-11 w-11{% endif %}" />
+  <div class="leading-tight">
+    <div class="font-display font-bold {% if dark == 'true' %}text-white{% else %}text-zinc-900{% endif %}
+      {% if size == 'sm' %}text-sm{% elif size == 'lg' %}text-lg{% else %}text-[15px]{% endif %}"
+      data-testid="brand-name">
+      {{ school.name|default:"Instituto São João de Brito" }}
+    </div>
+    <div class="text-[10px] uppercase tracking-widest italic
+      {% if dark == 'true' %}text-amber-300/90{% else %}text-amber-700{% endif %}">
+      {{ school.motto|default:"Educar para Servir" }}
+    </div>
+  </div>
+</div>
+{% endwith %}
