@@ -1,0 +1,43 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Staff Attendance{% endblock %}
+{% block crumb %}HR · Attendance{% endblock %}
+{% block page_title %}Employee Attendance{% endblock %}
+{% block topbar_actions %}
+<a href="/api/hr/employee-attendance/add/" data-testid="add-emp-attendance-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800"><i class="ph-bold ph-plus mr-2"></i> Mark Attendance</a>
+{% endblock %}
+{% block content %}
+<div class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+  <table class="min-w-full divide-y divide-zinc-200">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Date</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Employee</th>
+      <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">In</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Out</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Note</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for r in rows %}
+      <tr>
+        <td class="px-6 py-3 text-zinc-600">{{ r.date }}</td>
+        <td class="px-6 py-3 font-medium">{{ r.employee.full_name }}</td>
+        <td class="px-6 py-3 text-center">
+          {% if r.status == "present" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Present</span>
+          {% elif r.status == "absent" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">Absent</span>
+          {% elif r.status == "late" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">Late</span>
+          {% elif r.status == "leave" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">Leave</span>
+          {% else %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-zinc-100 capitalize">{{ r.get_status_display }}</span>{% endif %}
+        </td>
+        <td class="px-6 py-3 text-zinc-600 text-xs">{{ r.check_in|default:"—" }}</td>
+        <td class="px-6 py-3 text-zinc-600 text-xs">{{ r.check_out|default:"—" }}</td>
+        <td class="px-6 py-3 text-zinc-600 text-xs">{{ r.note|default:"—" }}</td>
+        <td class="px-6 py-3 text-right">
+          <form method="post" action="/api/hr/employee-attendance/{{ r.id }}/delete/" class="inline" onsubmit="return confirm('Delete?');">{% csrf_token %}<button class="text-red-600 hover:underline text-sm">Delete</button></form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="px-6 py-12 text-center text-sm text-zinc-500">No attendance entries yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

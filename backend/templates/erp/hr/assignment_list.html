@@ -1,0 +1,41 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Asset Assignments{% endblock %}
+{% block crumb %}HR · Inventory{% endblock %}
+{% block page_title %}Asset Assignments{% endblock %}
+{% block topbar_actions %}
+<a href="/api/hr/assignments/add/" data-testid="add-assign-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800"><i class="ph-bold ph-plus mr-2"></i> Assign Item</a>
+{% endblock %}
+{% block content %}
+<div class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+  <table class="min-w-full divide-y divide-zinc-200">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Item</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Assigned to</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Qty</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Assigned on</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Return by</th>
+      <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for a in rows %}
+      <tr>
+        <td class="px-6 py-3 font-medium">{{ a.item.name }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ a.employee.full_name }}</td>
+        <td class="px-6 py-3 text-right tabular-nums">{{ a.quantity }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ a.assigned_on }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ a.return_by|default:"—" }}</td>
+        <td class="px-6 py-3 text-center">
+          {% if a.status == "returned" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Returned</span>
+          {% elif a.status == "lost" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-200">Lost</span>
+          {% else %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200">Assigned</span>{% endif %}
+        </td>
+        <td class="px-6 py-3 text-right">
+          <form method="post" action="/api/hr/assignments/{{ a.id }}/delete/" class="inline" onsubmit="return confirm('Delete?');">{% csrf_token %}<button class="text-red-600 hover:underline text-sm">Delete</button></form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="px-6 py-12 text-center text-sm text-zinc-500">No assignments yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

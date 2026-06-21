@@ -48,7 +48,16 @@
 
       <div>
         <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Human Resources</div>
+        {% include "_nav_item.html" with url="/api/hr/" label="HR Dashboard" icon="ph-gauge" tid="nav-hr-dashboard" %}
         {% include "_nav_item.html" with url="/api/employees/" label="Employees" icon="ph-users-three" tid="nav-employees" %}
+        {% include "_nav_item.html" with url="/api/salaries/" label="Payroll" icon="ph-money" tid="nav-payroll" %}
+        {% include "_nav_item.html" with url="/api/hr/jobs/" label="Recruitment" icon="ph-briefcase" tid="nav-hr-jobs" %}
+        {% include "_nav_item.html" with url="/api/hr/candidates/" label="Candidates" icon="ph-identification-card" tid="nav-hr-candidates" %}
+        {% include "_nav_item.html" with url="/api/hr/training/" label="Training" icon="ph-graduation-cap" tid="nav-hr-training" %}
+        {% include "_nav_item.html" with url="/api/hr/reviews/" label="Performance" icon="ph-star" tid="nav-hr-reviews" %}
+        {% include "_nav_item.html" with url="/api/hr/employee-attendance/" label="Staff Attendance" icon="ph-calendar-check" tid="nav-hr-attendance" %}
+        {% include "_nav_item.html" with url="/api/hr/inventory/" label="Inventory" icon="ph-package" tid="nav-hr-inventory" %}
+        {% include "_nav_item.html" with url="/api/hr/assignments/" label="Asset Assignments" icon="ph-hand-coins" tid="nav-hr-assignments" %}
         {% include "_nav_item.html" with url="/api/leaves/" label="Leave Requests" icon="ph-airplane-tilt" tid="nav-leaves" %}
       </div>
 

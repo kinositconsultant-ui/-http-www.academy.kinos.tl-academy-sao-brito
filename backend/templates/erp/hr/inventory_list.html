@@ -1,0 +1,43 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Inventory{% endblock %}
+{% block crumb %}HR · Inventory{% endblock %}
+{% block page_title %}Inventory Items{% endblock %}
+{% block topbar_actions %}
+<a href="/api/hr/inventory/categories/add/" class="inline-flex items-center rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800 mr-2"><i class="ph-bold ph-tag mr-2"></i> Add Category</a>
+<a href="/api/hr/inventory/add/" data-testid="add-inventory-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800"><i class="ph-bold ph-plus mr-2"></i> Add Item</a>
+{% endblock %}
+{% block content %}
+<div class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="inventory-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Item</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">SKU</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Category</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Location</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Qty</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Reorder ≤</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Unit cost</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Value</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for i in rows %}
+      <tr {% if i.is_low_stock %}class="bg-red-50/40"{% endif %} data-testid="inv-row-{{ i.id }}">
+        <td class="px-6 py-3 font-medium">{{ i.name }}{% if i.is_low_stock %} <span class="ml-1 text-[10px] font-semibold text-red-700">LOW</span>{% endif %}</td>
+        <td class="px-6 py-3 text-zinc-600 font-mono text-xs">{{ i.sku|default:"—" }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ i.category|default:"—" }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ i.location|default:"—" }}</td>
+        <td class="px-6 py-3 text-right tabular-nums {% if i.is_low_stock %}text-red-700 font-semibold{% endif %}">{{ i.quantity }}</td>
+        <td class="px-6 py-3 text-right tabular-nums text-zinc-500">{{ i.reorder_level }}</td>
+        <td class="px-6 py-3 text-right tabular-nums">{{ i.unit_cost|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-3 text-right tabular-nums font-semibold">{{ i.total_value|floatformat:2|intcomma }}</td>
+        <td class="px-6 py-3 text-right">
+          <form method="post" action="/api/hr/inventory/{{ i.id }}/delete/" class="inline" onsubmit="return confirm('Delete?');">{% csrf_token %}<button class="text-red-600 hover:underline text-sm">Delete</button></form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="9" class="px-6 py-12 text-center text-sm text-zinc-500">No items yet — add your first category, then your first item.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

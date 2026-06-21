@@ -542,3 +542,174 @@ class CreditNote(models.Model):
         return f"CN-{self.id} {self.student.full_name} {self.amount}"
 
 
+
+
+# =====================================================================
+# HR — Recruitment, Training, Performance, Employee Attendance, Inventory
+# =====================================================================
+
+
+class JobPosting(models.Model):
+    STATUS = [("open", "Open"), ("closed", "Closed"), ("on_hold", "On Hold")]
+    title = models.CharField(max_length=160)
+    department = models.CharField(max_length=20, choices=Employee.DEPARTMENT, default="other")
+    description = models.TextField(blank=True)
+    requirements = models.TextField(blank=True)
+    salary_range = models.CharField(max_length=80, blank=True, help_text="e.g. USD 800–1,200")
+    openings = models.PositiveIntegerField(default=1)
+    status = models.CharField(max_length=10, choices=STATUS, default="open")
+    posted_on = models.DateField(auto_now_add=True)
+    closes_on = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-posted_on", "-id"]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_department_display()})"
+
+
+class Candidate(models.Model):
+    STAGE = [
+        ("applied", "Applied"), ("screening", "Screening"),
+        ("interview", "Interview"), ("offer", "Offer"),
+        ("hired", "Hired"), ("rejected", "Rejected"),
+    ]
+    job = models.ForeignKey(JobPosting, on_delete=models.CASCADE, related_name="candidates")
+    full_name = models.CharField(max_length=160)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    cv = models.FileField(upload_to="cvs/", blank=True, null=True)
+    stage = models.CharField(max_length=12, choices=STAGE, default="applied")
+    applied_on = models.DateField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-applied_on", "-id"]
+
+    def __str__(self):
+        return f"{self.full_name} → {self.job.title}"
+
+
+class TrainingProgram(models.Model):
+    STATUS = [("scheduled", "Scheduled"), ("ongoing", "Ongoing"),
+              ("completed", "Completed"), ("cancelled", "Cancelled")]
+    title = models.CharField(max_length=160)
+    description = models.TextField(blank=True)
+    trainer = models.CharField(max_length=120, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    capacity = models.PositiveIntegerField(default=20)
+    status = models.CharField(max_length=10, choices=STATUS, default="scheduled")
+
+    class Meta:
+        ordering = ["-start_date", "-id"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def enrolled_count(self):
+        return self.enrollments.count()
+
+
+class TrainingEnrollment(models.Model):
+    STATUS = [("enrolled", "Enrolled"), ("completed", "Completed"), ("dropped", "Dropped")]
+    program = models.ForeignKey(TrainingProgram, on_delete=models.CASCADE, related_name="enrollments")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="trainings")
+    status = models.CharField(max_length=10, choices=STATUS, default="enrolled")
+    enrolled_on = models.DateField(auto_now_add=True)
+    completed_on = models.DateField(null=True, blank=True)
+    score = models.PositiveIntegerField(null=True, blank=True, help_text="Optional 0–100")
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-enrolled_on", "-id"]
+        unique_together = [("program", "employee")]
+
+
+class PerformanceReview(models.Model):
+    RATING = [(1, "1 — Needs Improvement"), (2, "2 — Below Expectations"),
+              (3, "3 — Meets Expectations"), (4, "4 — Exceeds Expectations"),
+              (5, "5 — Outstanding")]
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="reviews")
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                 null=True, blank=True)
+    period_start = models.DateField()
+    period_end = models.DateField()
+    rating = models.PositiveSmallIntegerField(choices=RATING, default=3)
+    strengths = models.TextField(blank=True)
+    improvements = models.TextField(blank=True)
+    goals = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-period_end", "-id"]
+
+
+class EmployeeAttendance(models.Model):
+    STATUS = [("present", "Present"), ("absent", "Absent"),
+              ("late", "Late"), ("leave", "On Leave"), ("remote", "Remote")]
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="attendance")
+    date = models.DateField()
+    status = models.CharField(max_length=10, choices=STATUS, default="present")
+    check_in = models.TimeField(null=True, blank=True)
+    check_out = models.TimeField(null=True, blank=True)
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        unique_together = [("employee", "date")]
+
+
+class InventoryCategory(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Inventory categories"
+
+    def __str__(self):
+        return self.name
+
+
+class InventoryItem(models.Model):
+    name = models.CharField(max_length=160)
+    category = models.ForeignKey(InventoryCategory, on_delete=models.SET_NULL,
+                                 null=True, blank=True, related_name="items")
+    sku = models.CharField(max_length=60, blank=True)
+    quantity = models.PositiveIntegerField(default=0)
+    reorder_level = models.PositiveIntegerField(default=0,
+        help_text="Below this, the item is flagged as low-stock.")
+    location = models.CharField(max_length=120, blank=True)
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_low_stock(self):
+        return self.reorder_level and self.quantity <= self.reorder_level
+
+    @property
+    def total_value(self):
+        return float(self.unit_cost or 0) * (self.quantity or 0)
+
+
+class InventoryAssignment(models.Model):
+    STATUS = [("assigned", "Assigned"), ("returned", "Returned"), ("lost", "Lost")]
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name="assignments")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="assignments")
+    quantity = models.PositiveIntegerField(default=1)
+    assigned_on = models.DateField(auto_now_add=True)
+    return_by = models.DateField(null=True, blank=True)
+    returned_on = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS, default="assigned")
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-assigned_on", "-id"]

@@ -1,0 +1,35 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Enrolments{% endblock %}
+{% block crumb %}HR · Training{% endblock %}
+{% block page_title %}Training Enrolments{% endblock %}
+{% block topbar_actions %}
+<a href="/api/hr/enrollments/add/" data-testid="add-enroll-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800"><i class="ph-bold ph-plus mr-2"></i> Enrol Employee</a>
+{% endblock %}
+{% block content %}
+<div class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+  <table class="min-w-full divide-y divide-zinc-200">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Employee</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Program</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Enrolled on</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Score</th>
+      <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for e in rows %}
+      <tr>
+        <td class="px-6 py-3 font-medium">{{ e.employee.full_name }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ e.program.title }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ e.enrolled_on }}</td>
+        <td class="px-6 py-3 text-right tabular-nums">{{ e.score|default:"—" }}</td>
+        <td class="px-6 py-3 text-center"><span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-zinc-100 capitalize">{{ e.get_status_display }}</span></td>
+        <td class="px-6 py-3 text-right">
+          <form method="post" action="/api/hr/enrollments/{{ e.id }}/delete/" class="inline" onsubmit="return confirm('Delete?');">{% csrf_token %}<button class="text-red-600 hover:underline text-sm">Delete</button></form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">No enrolments yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

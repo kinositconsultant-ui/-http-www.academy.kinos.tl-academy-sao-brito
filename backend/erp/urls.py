@@ -3,10 +3,40 @@ from django.views.generic import RedirectView
 from . import views
 from . import portal_views
 from . import student_views
+from . import hr_views
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/api/dashboard/", permanent=False)),
     path("dashboard/", views.dashboard, name="dashboard"),
+
+    # HR module
+    path("hr/", hr_views.hr_dashboard, name="hr_dashboard"),
+    path("hr/jobs/", hr_views.job_list, name="hr_job_list"),
+    path("hr/jobs/add/", hr_views.job_add, name="hr_job_add"),
+    path("hr/jobs/<int:pk>/delete/", hr_views.job_delete, name="hr_job_delete"),
+    path("hr/candidates/", hr_views.candidate_list, name="hr_candidate_list"),
+    path("hr/candidates/add/", hr_views.candidate_add, name="hr_candidate_add"),
+    path("hr/candidates/<int:pk>/delete/", hr_views.candidate_delete, name="hr_candidate_delete"),
+    path("hr/training/", hr_views.training_list, name="hr_training_list"),
+    path("hr/training/add/", hr_views.training_add, name="hr_training_add"),
+    path("hr/training/<int:pk>/delete/", hr_views.training_delete, name="hr_training_delete"),
+    path("hr/enrollments/", hr_views.enrollment_list, name="hr_enrollment_list"),
+    path("hr/enrollments/add/", hr_views.enrollment_add, name="hr_enrollment_add"),
+    path("hr/enrollments/<int:pk>/delete/", hr_views.enrollment_delete, name="hr_enrollment_delete"),
+    path("hr/reviews/", hr_views.review_list, name="hr_review_list"),
+    path("hr/reviews/add/", hr_views.review_add, name="hr_review_add"),
+    path("hr/reviews/<int:pk>/delete/", hr_views.review_delete, name="hr_review_delete"),
+    path("hr/employee-attendance/", hr_views.employee_attendance_list, name="hr_employee_attendance_list"),
+    path("hr/employee-attendance/add/", hr_views.employee_attendance_add, name="hr_employee_attendance_add"),
+    path("hr/employee-attendance/<int:pk>/delete/", hr_views.employee_attendance_delete, name="hr_employee_attendance_delete"),
+    path("hr/inventory/", hr_views.inventory_list, name="hr_inventory_list"),
+    path("hr/inventory/add/", hr_views.inventory_add, name="hr_inventory_add"),
+    path("hr/inventory/categories/add/", hr_views.category_add, name="hr_inventory_category_add"),
+    path("hr/inventory/<int:pk>/delete/", hr_views.inventory_delete, name="hr_inventory_delete"),
+    path("hr/assignments/", hr_views.assignment_list, name="hr_assignment_list"),
+    path("hr/assignments/add/", hr_views.assignment_add, name="hr_assignment_add"),
+    path("hr/assignments/<int:pk>/delete/", hr_views.assignment_delete, name="hr_assignment_delete"),
+    path("hr/payslip/<int:pk>.pdf", hr_views.payslip_pdf, name="hr_payslip_pdf"),
 
     # Parent portal
     path("parent/", portal_views.parent_dashboard, name="parent_dashboard"),

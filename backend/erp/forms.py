@@ -3,6 +3,9 @@ from .models import (
     SchoolClass, Subject, Student, Teacher, Attendance, Grade,
     FeeStructure, FeeInvoice, FeePayment, SalaryPayment, Expense, Income,
     Donor, Donation, Employee, LeaveRequest, AcademicYear, CreditNote,
+    JobPosting, Candidate, TrainingProgram, TrainingEnrollment,
+    PerformanceReview, EmployeeAttendance, InventoryCategory, InventoryItem,
+    InventoryAssignment,
 )
 
 
@@ -133,3 +136,80 @@ class CreditNoteForm(forms.ModelForm):
         model = CreditNote
         exclude = ["issued_on", "issued_by"]
         widgets = {"note": forms.Textarea(attrs={"rows": 2})}
+
+
+# ===== HR forms =====
+
+class JobPostingForm(forms.ModelForm):
+    class Meta:
+        model = JobPosting
+        fields = ["title", "department", "description", "requirements",
+                  "salary_range", "openings", "status", "closes_on"]
+        widgets = {"description": forms.Textarea(attrs={"rows": 3}),
+                   "requirements": forms.Textarea(attrs={"rows": 3}),
+                   "closes_on": forms.DateInput(attrs={"type": "date"})}
+
+
+class CandidateForm(forms.ModelForm):
+    class Meta:
+        model = Candidate
+        fields = ["job", "full_name", "email", "phone", "cv", "stage", "notes"]
+        widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
+
+
+class TrainingProgramForm(forms.ModelForm):
+    class Meta:
+        model = TrainingProgram
+        fields = ["title", "description", "trainer", "start_date", "end_date",
+                  "capacity", "status"]
+        widgets = {"description": forms.Textarea(attrs={"rows": 3}),
+                   "start_date": forms.DateInput(attrs={"type": "date"}),
+                   "end_date": forms.DateInput(attrs={"type": "date"})}
+
+
+class TrainingEnrollmentForm(forms.ModelForm):
+    class Meta:
+        model = TrainingEnrollment
+        fields = ["program", "employee", "status", "score", "note"]
+
+
+class PerformanceReviewForm(forms.ModelForm):
+    class Meta:
+        model = PerformanceReview
+        fields = ["employee", "period_start", "period_end", "rating",
+                  "strengths", "improvements", "goals"]
+        widgets = {"strengths": forms.Textarea(attrs={"rows": 2}),
+                   "improvements": forms.Textarea(attrs={"rows": 2}),
+                   "goals": forms.Textarea(attrs={"rows": 2}),
+                   "period_start": forms.DateInput(attrs={"type": "date"}),
+                   "period_end": forms.DateInput(attrs={"type": "date"})}
+
+
+class EmployeeAttendanceForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeAttendance
+        fields = ["employee", "date", "status", "check_in", "check_out", "note"]
+        widgets = {"date": forms.DateInput(attrs={"type": "date"}),
+                   "check_in": forms.TimeInput(attrs={"type": "time"}),
+                   "check_out": forms.TimeInput(attrs={"type": "time"})}
+
+
+class InventoryCategoryForm(forms.ModelForm):
+    class Meta:
+        model = InventoryCategory
+        fields = ["name"]
+
+
+class InventoryItemForm(forms.ModelForm):
+    class Meta:
+        model = InventoryItem
+        fields = ["name", "category", "sku", "quantity", "reorder_level",
+                  "location", "unit_cost", "notes"]
+        widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
+
+
+class InventoryAssignmentForm(forms.ModelForm):
+    class Meta:
+        model = InventoryAssignment
+        fields = ["item", "employee", "quantity", "return_by", "status", "note"]
+        widgets = {"return_by": forms.DateInput(attrs={"type": "date"})}

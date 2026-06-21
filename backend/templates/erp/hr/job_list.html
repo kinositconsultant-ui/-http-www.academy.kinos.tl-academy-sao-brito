@@ -1,0 +1,42 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Recruitment{% endblock %}
+{% block crumb %}Human Resources · Recruitment{% endblock %}
+{% block page_title %}Job Postings{% endblock %}
+{% block topbar_actions %}
+<a href="/api/hr/jobs/add/" data-testid="add-job-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800"><i class="ph-bold ph-plus mr-2"></i> Post a Job</a>
+{% endblock %}
+{% block content %}
+<div class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="job-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Title</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Department</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Salary range</th>
+      <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Openings</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Posted</th>
+      <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for j in rows %}
+      <tr data-testid="job-row-{{ j.id }}">
+        <td class="px-6 py-3 font-medium">{{ j.title }}</td>
+        <td class="px-6 py-3 capitalize">{{ j.get_department_display }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ j.salary_range|default:"—" }}</td>
+        <td class="px-6 py-3 text-center tabular-nums">{{ j.openings }}</td>
+        <td class="px-6 py-3 text-zinc-600">{{ j.posted_on }}</td>
+        <td class="px-6 py-3 text-center">
+          {% if j.status == "open" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200">Open</span>
+          {% elif j.status == "closed" %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200">Closed</span>
+          {% else %}<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">On Hold</span>{% endif %}
+        </td>
+        <td class="px-6 py-3 text-right">
+          <form method="post" action="/api/hr/jobs/{{ j.id }}/delete/" class="inline" onsubmit="return confirm('Delete this job?');">{% csrf_token %}<button class="text-red-600 hover:underline text-sm">Delete</button></form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="px-6 py-12 text-center text-sm text-zinc-500">No job postings yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
