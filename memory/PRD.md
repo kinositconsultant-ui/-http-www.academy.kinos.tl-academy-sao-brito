@@ -65,6 +65,21 @@
   email + page number into the footer of every generated PDF (Report Card,
   Invoice, Payment Receipt, Payslip). Validated by extracting text from
   generated PDFs — header/footer strings present on all three.
+- **Code-review fixes (2026-02-22)** —
+  - `portal_views.py`: defensive `session = None` / `live = None` initializers
+    around Stripe checkout calls.
+  - `report_card.py`: replaced dynamic `__import__("erp").models.Grade…`
+    with a clean `from .models import Grade` local import.
+- **High-complexity refactor pass (2026-02-22)** — Behavior-neutral split of
+  two long view functions into focused helpers:
+  - `hr_dashboard` → 7 helpers (`_workforce_stats`, `_payroll_stats`,
+    `_recruitment_stats`, `_training_stats`, `_performance_stats`,
+    `_today_attendance_stats`, `_inventory_stats`).
+  - `finance_report` → 3 helpers (`_finance_ytd_totals`,
+    `_finance_monthly_trend`, `_finance_breakdowns`).
+  - Regression suite added at `/app/backend/tests/test_refactor_regression.py`
+    (14 tests, 13 pass + 1 skipped on seed-data gap, 0 failed). All KPIs,
+    chart payloads and PDF endpoints verified intact.
 
 ## Implemented (2026-01)
 - Code-review pass (2026-01-20):
