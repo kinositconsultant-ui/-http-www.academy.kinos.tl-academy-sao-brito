@@ -339,7 +339,7 @@ class LessonPlanForm(forms.ModelForm):
     class Meta:
         model = LessonPlan
         fields = ["title", "title_pt", "title_tet",
-                  "subject", "class_room", "week_start",
+                  "subject", "class_room", "teacher", "week_start",
                   "objectives", "activities", "materials",
                   "file", "is_published"]
         widgets = {
@@ -347,5 +347,8 @@ class LessonPlanForm(forms.ModelForm):
             "objectives": forms.Textarea(attrs={"rows": 3}),
             "activities": forms.Textarea(attrs={"rows": 4}),
             "materials": forms.Textarea(attrs={"rows": 2}),
+        }
+        help_texts = {
+            "teacher": "Required when an admin creates the plan; auto-filled for teachers.",
         }
 

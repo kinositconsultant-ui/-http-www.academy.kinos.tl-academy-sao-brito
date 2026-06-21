@@ -491,20 +491,22 @@ def lesson_plan_create(request):
     if getattr(u, "role", "") == "teacher":
         t = Teacher.objects.filter(teacher_user=u).first()
         if t:
+            initial["teacher"] = t
             initial["subject"] = t.subjects.first()
     form = LessonPlanForm(request.POST or None, request.FILES or None, initial=initial)
+    # Teachers can't reassign the owner — lock the field.
+    if getattr(u, "role", "") == "teacher":
+        form.fields["teacher"].disabled = True
     if form.is_valid():
         plan = form.save(commit=False)
         if getattr(u, "role", "") == "teacher":
-            t = Teacher.objects.filter(teacher_user=u).first()
-            if t:
-                plan.teacher = t
+            plan.teacher = Teacher.objects.filter(teacher_user=u).first()
+        if not plan.teacher_id:
+            form.add_error("teacher", "Select the teacher who owns this plan.")
         else:
-            plan.teacher = (form.cleaned_data["subject"].teachers.first()
-                            or Teacher.objects.first())
-        plan.save()
-        messages.success(request, f"Lesson plan '{plan.title}' saved.")
-        return redirect("lesson_plan_list")
+            plan.save()
+            messages.success(request, f"Lesson plan '{plan.title}' saved.")
+            return redirect("lesson_plan_list")
     return render(request, "erp/form.html", {
         "form": form, "title": "New lesson plan", "back": "lesson_plan_list"})
 

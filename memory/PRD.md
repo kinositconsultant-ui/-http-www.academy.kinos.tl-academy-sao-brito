@@ -78,6 +78,25 @@
   - New navigation tabs wired into all four portals (admin sidebar adds "Assignments" + "Communication" section; student/teacher/parent topbars add "Notices" + "Calendar").
   - Audience filter (`_filter_for_user`) intersects role + class so a Year-7 student does not see Year-10 assignments or audience='teacher' announcements.
   - Regression suite: `/app/backend/tests/test_phase1_academy.py` — 20 pytest cases passing.
+- **Phase 2 — Documents · Lesson Plans · Today widget (2026-02-22)** —
+  - **📂 Student Document Repository** (`/api/students/<id>/documents/`):
+    10 doc types (BI / Birth / Baptism / Vaccination / Passport / Transfer /
+    Prior Report / Photo / Parent ID / Other). Optional issued + expiry dates;
+    docs expiring within 30 days get a ⚠ flag. Tight permission rules: admin/HR
+    full access · parent can manage **their own children only** · students can
+    view + upload their own (verified by cross-owner 403 tests).
+  - **👨‍🏫 Lesson Plans** (`/api/lesson-plans/`): per teacher · per subject ·
+    per class · per week. Trilingual title (EN/PT/TET), objectives,
+    day-by-day activities, materials list, optional PDF. Draft (is_published=False)
+    visible to admin/owning-teacher only. Students/Parents see only the
+    published plans for their own class.
+  - **📍 Today / This-week widget** (`erp/academy/_today_widget.html`): single
+    partial included on all four overview pages — admin dashboard, parent
+    portal, student portal, teacher portal. Pulls today's calendar events,
+    next 7 days' events, latest 3 announcements (audience-scoped), and (for
+    students only) the next 3 upcoming assignment due dates.
+  - Regression suite: `/app/backend/tests/test_phase2_academy.py` — 23 new tests;
+    combined Phase 1+2 = **55 pass / 3 skipped (seed-data design gaps)**.
 - **High-complexity refactor pass (2026-02-22)** — Behavior-neutral split of
   two long view functions into focused helpers:
   - `hr_dashboard` → 7 helpers (`_workforce_stats`, `_payroll_stats`,
