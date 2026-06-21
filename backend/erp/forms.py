@@ -377,6 +377,6 @@ class LearningMaterialForm(forms.ModelForm):
         f = cleaned.get("file")
         if mtype in ("video", "link") and not url:
             self.add_error("url", f"A URL is required for {mtype} material.")
-        if mtype in ("pdf", "slides") and not f and not url:
+        if mtype in ("pdf", "slides", "other") and not f and not url:
             self.add_error("file", "Either upload a file or provide a URL.")
         return cleaned

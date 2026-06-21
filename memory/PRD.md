@@ -97,6 +97,18 @@
     students only) the next 3 upcoming assignment due dates.
   - Regression suite: `/app/backend/tests/test_phase2_academy.py` — 23 new tests;
     combined Phase 1+2 = **55 pass / 3 skipped (seed-data design gaps)**.
+- **Phase 3 — LMS / Learning Materials (2026-02-22)** —
+  - **🎓 Learning Materials** (`/api/learning/`): teachers + admins upload
+    videos, external links, PDFs, slides per subject. Optional per-class
+    scoping (empty = visible to every class taking the subject). Trilingual
+    title (EN/PT/TET), optional week number, optional draft (is_published=False)
+    invisible to students/parents.
+  - **Video embedding**: YouTube (`youtu.be/<id>`, `watch?v=<id>`, `watch?v=<id>&list=…`, `shorts/<id>`) and Vimeo (numeric ids) URLs are auto-parsed into iframe-safe embed URLs by `LearningMaterial.embed_url`. PDFs render inline via iframe (`#toolbar=0`); other files show an "Open file" button.
+  - **Per-role visibility**: admin/principal/teacher see everything; student/parent see only published materials matching `Q(class_room__isnull=True) | Q(class_room=their_class)`.
+  - **Form validation**: `clean()` requires a URL for video/link material and at least URL-or-file for pdf/slides/other — no empty dead-end records.
+  - **Nav**: "Learning Materials" added to admin sidebar; "Materials" tab added to student / teacher / parent topbars.
+  - Regression suite: `/app/backend/tests/test_phase3_lms.py` — 28 new tests;
+    grand total Phase 1+2+3 = **83 pass / 3 skipped (same seed-data gap)**.
 - **High-complexity refactor pass (2026-02-22)** — Behavior-neutral split of
   two long view functions into focused helpers:
   - `hr_dashboard` → 7 helpers (`_workforce_stats`, `_payroll_stats`,
