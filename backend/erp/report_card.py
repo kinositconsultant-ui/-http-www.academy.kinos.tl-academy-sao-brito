@@ -216,10 +216,11 @@ def build_report_card(student, grades, school, academic_year, attendance_stats):
     `grades` is an iterable already filtered to the chosen academic year.
     `attendance_stats` is a dict {present, total} or None.
     """
+    from .pdf_brand import header_block, make_footer_callback
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                             leftMargin=15 * mm, rightMargin=15 * mm,
-                            topMargin=15 * mm, bottomMargin=15 * mm,
+                            topMargin=15 * mm, bottomMargin=22 * mm,
                             title=f"Report Card - {student.full_name}",
                             author=school.name if school else "Academy ERP")
     styles = _styles()
@@ -247,7 +248,7 @@ def build_report_card(student, grades, school, academic_year, attendance_stats):
         att_rate = round(100 * attendance_stats["present"] / attendance_stats["total"], 1)
 
     story = []
-    story += _header(school, styles, year_label)
+    story += header_block(school, "REPORT CARD", year_label)
     story.append(_student_block(student, styles))
     story.append(Spacer(1, 10))
     story.append(_summary_block(passed, failed, avg, att_rate, styles))
@@ -281,7 +282,8 @@ def build_report_card(student, grades, school, academic_year, attendance_stats):
     story.append(Spacer(1, 24))
     story.append(_footer(styles))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=make_footer_callback(school),
+              onLaterPages=make_footer_callback(school))
     pdf = buf.getvalue()
     buf.close()
     return pdf

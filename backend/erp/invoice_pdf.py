@@ -118,16 +118,17 @@ def _money(amount, currency):
 
 def build_invoice_pdf(invoice, school):
     """One-page invoice PDF with line item + payment summary."""
+    from .pdf_brand import header_block, make_footer_callback
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                             leftMargin=15 * mm, rightMargin=15 * mm,
-                            topMargin=15 * mm, bottomMargin=15 * mm,
+                            topMargin=15 * mm, bottomMargin=22 * mm,
                             title=f"Invoice #{invoice.id}",
                             author=school.name if school else "Academy ERP")
     styles = _styles()
     currency = (school.currency if school else "USD") or "USD"
     story = []
-    story += _header(school, styles, "INVOICE", invoice.id)
+    story += header_block(school, "INVOICE", f"#{invoice.id}")
     story.append(_student_block(invoice.student, styles))
     story.append(Spacer(1, 10))
 
@@ -227,23 +228,25 @@ def build_invoice_pdf(invoice, school):
         "Bank details and online payment links are available on your parent portal.",
         styles["muted"]))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=make_footer_callback(school),
+              onLaterPages=make_footer_callback(school))
     return buf.getvalue()
 
 
 def build_receipt_pdf(payment, invoice, school):
     """One-page payment receipt PDF."""
+    from .pdf_brand import header_block, make_footer_callback
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                             leftMargin=15 * mm, rightMargin=15 * mm,
-                            topMargin=15 * mm, bottomMargin=15 * mm,
+                            topMargin=15 * mm, bottomMargin=22 * mm,
                             title=f"Receipt PMT-{payment.id}",
                             author=school.name if school else "Academy ERP")
     styles = _styles()
     currency = (school.currency if school else "USD") or "USD"
 
     story = []
-    story += _header(school, styles, "PAYMENT RECEIPT", f"PMT-{payment.id}")
+    story += header_block(school, "PAYMENT RECEIPT", f"PMT-{payment.id}")
     story.append(_student_block(invoice.student, styles))
     story.append(Spacer(1, 12))
 
@@ -292,5 +295,6 @@ def build_receipt_pdf(payment, invoice, school):
         f"number <b>PMT-{payment.id}</b>.",
         styles["muted"]))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=make_footer_callback(school),
+              onLaterPages=make_footer_callback(school))
     return buf.getvalue()

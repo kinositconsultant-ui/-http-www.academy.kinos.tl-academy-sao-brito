@@ -60,6 +60,11 @@
 - Student self-service portal (2026-02-20)
 - Dashboard Chart.js layout fix (2026-02-20)
 - Bulk PDF report cards verified end-to-end (2026-02-20)
+- **Institutional PDF branding (2026-02-22)** — Centralized `erp/pdf_brand.py`
+  injects school logo + name + motto into the header and address + phone +
+  email + page number into the footer of every generated PDF (Report Card,
+  Invoice, Payment Receipt, Payslip). Validated by extracting text from
+  generated PDFs — header/footer strings present on all three.
 
 ## Implemented (2026-01)
 - Code-review pass (2026-01-20):

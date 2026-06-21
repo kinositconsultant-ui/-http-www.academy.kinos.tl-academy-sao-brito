@@ -18,18 +18,15 @@ PAID_FG = colors.HexColor("#047857")
 
 
 def build_payslip_pdf(payslip, school):
+    from .pdf_brand import header_block, make_footer_callback
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                             leftMargin=18 * mm, rightMargin=18 * mm,
-                            topMargin=18 * mm, bottomMargin=18 * mm,
+                            topMargin=18 * mm, bottomMargin=22 * mm,
                             title=f"Payslip {payslip.id}",
                             author=school.name if school else "Academy ERP")
 
     base = getSampleStyleSheet()
-    h1 = ParagraphStyle("h1", parent=base["Title"], fontName="Helvetica-Bold",
-                        fontSize=20, leading=24, textColor=INK, spaceAfter=2)
-    sub = ParagraphStyle("sub", parent=base["Normal"], fontName="Helvetica",
-                         fontSize=9, leading=12, textColor=MUTED)
     label = ParagraphStyle("l", parent=base["Normal"], fontName="Helvetica",
                            fontSize=7.5, textColor=MUTED, leading=10)
     value = ParagraphStyle("v", parent=base["Normal"], fontName="Helvetica-Bold",
@@ -44,29 +41,7 @@ def build_payslip_pdf(payslip, school):
     t = payslip.teacher
 
     story = []
-    # Header
-    bits = []
-    if school:
-        if school.motto:
-            bits.append(f"<i>{school.motto}</i>")
-        if school.address:
-            bits.append(school.address)
-        if school.phone:
-            bits.append(school.phone)
-        if school.email:
-            bits.append(school.email)
-    band = Table([[Paragraph(school.name if school else "Academy ERP", h1),
-                   Paragraph(f"<b>PAYSLIP</b><br/>{payslip.month}", value)]],
-                 colWidths=[120 * mm, 50 * mm])
-    band.setStyle(TableStyle([
-        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LINEBELOW", (0, 0), (-1, -1), 1.4, BRAND),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-    ]))
-    story.append(band)
-    story.append(Paragraph(" · ".join(bits) or "Academy ERP", sub))
-    story.append(Spacer(1, 12))
+    story += header_block(school, "PAYSLIP", payslip.month)
 
     # Employee block
     emp = Table([
@@ -131,5 +106,6 @@ def build_payslip_pdf(payslip, school):
         "Any discrepancies must be reported to HR within 7 days of receipt.",
         muted))
 
-    doc.build(story)
+    doc.build(story, onFirstPage=make_footer_callback(school),
+              onLaterPages=make_footer_callback(school))
     return buf.getvalue()
