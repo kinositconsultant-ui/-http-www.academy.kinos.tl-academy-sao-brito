@@ -20,6 +20,7 @@ urlpatterns = [
     path("teacher/profile/", teacher_views.teacher_profile, name="teacher_profile"),
     path("teacher/leave/", teacher_views.teacher_leave_request, name="teacher_leave_request"),
     path("teachers/<int:pk>/create-login/", teacher_views.create_teacher_login, name="teacher_create_login"),
+    path("teacher/check-in/", teacher_views.teacher_check_in, name="teacher_check_in"),
     path("teacher/students/", teacher_views.teacher_students, name="teacher_students"),
     path("teacher/documents/", teacher_views.teacher_documents, name="teacher_documents"),
 

@@ -22,6 +22,7 @@ from .models import (
     Teacher, Student, SchoolClass, Subject, AcademicYear,
     Grade, Attendance, SalaryPayment, LeaveRequest,
     TrainingEnrollment, StudentEvaluation, TeachingDocument,
+    Employee, EmployeeAttendance,
 )
 from .forms import LeaveRequestForm
 
@@ -53,6 +54,22 @@ def _my_students(teacher):
     return Student.objects.filter(
         school_class__in=_my_classes(teacher), is_active=True
     ).select_related("school_class")
+
+
+def _record_self_attendance(teacher, when, note="Auto from class attendance"):
+    """Find the Employee row matching this teacher (by email) and stamp
+    today as Present. Idempotent — does nothing if a row already exists.
+    Returns the EmployeeAttendance row or None if no Employee linked.
+    """
+    if not teacher.email:
+        return None
+    emp = Employee.objects.filter(email=teacher.email).first()
+    if not emp:
+        return None
+    row, created = EmployeeAttendance.objects.get_or_create(
+        employee=emp, date=when,
+        defaults={"status": "present", "note": note})
+    return row
 
 
 def _gate(request):
@@ -139,11 +156,23 @@ def teacher_attendance(request):
                     student=s, date=the_date, status=status_val,
                     recorded_by=request.user)
         messages.success(request, f"Attendance saved for {selected} on {the_date}.")
+        # Auto-record the teacher as Present in HR for the same date
+        _record_self_attendance(teacher, the_date)
         return redirect(f"/api/teacher/attendance/?class={selected.id}&date={the_date}")
+
+    # Today's HR check-in status for this teacher
+    today = date.today()
+    self_today = None
+    if teacher.email:
+        emp = Employee.objects.filter(email=teacher.email).first()
+        if emp:
+            self_today = EmployeeAttendance.objects.filter(
+                employee=emp, date=today).first()
 
     return render(request, "erp/teacher_attendance.html", {
         "teacher": teacher, "classes": classes, "selected": selected,
         "the_date": the_date, "rows": rows,
+        "self_today": self_today, "today_iso": today,
     })
 
 
@@ -381,3 +410,25 @@ def teacher_documents(request):
     return render(request, "erp/teacher_documents.html", {
         "teacher": teacher, "rows": docs,
     })
+
+
+@login_required
+def teacher_check_in(request):
+    """Manual 'Check in for today' — stamps the teacher present in HR."""
+    teacher, redir = _gate(request)
+    if redir:
+        return redir
+    if request.method != "POST":
+        return redirect("/api/teacher/attendance/")
+    today = date.today()
+    row = _record_self_attendance(teacher, today, note="Manual self check-in")
+    if row is None:
+        messages.warning(
+            request,
+            "Check-in failed: no HR employee record matches your email. "
+            "Ask an admin to create one.")
+    else:
+        messages.success(
+            request,
+            f"Checked in as Present for {today}.")
+    return redirect("/api/teacher/attendance/")
