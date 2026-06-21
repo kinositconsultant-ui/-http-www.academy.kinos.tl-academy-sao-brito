@@ -1,0 +1,63 @@
+{% extends "dashboard_base.html" %}
+{% block title %}{{ a.title }}{% endblock %}
+{% block crumb %}Academics · Assignments · {{ a.title }}{% endblock %}
+{% block page_title %}{{ a.title }}{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-1 bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm p-6 space-y-3">
+    <h3 class="font-display font-semibold text-zinc-900">Details</h3>
+    <div class="text-sm text-zinc-700"><b>Class:</b> {{ a.class_room }}</div>
+    <div class="text-sm text-zinc-700"><b>Subject:</b> {{ a.subject.name }}</div>
+    <div class="text-sm text-zinc-700"><b>Teacher:</b> {% if a.teacher %}{{ a.teacher.full_name }}{% else %}—{% endif %}</div>
+    <div class="text-sm text-zinc-700"><b>Term:</b> {{ a.get_term_display }}</div>
+    <div class="text-sm text-zinc-700"><b>Max score:</b> {{ a.max_score }}</div>
+    <div class="text-sm text-zinc-700"><b>Due:</b> <span class="{% if a.is_overdue %}text-red-700 font-semibold{% endif %}">{{ a.due_at|date:"Y-m-d H:i" }}</span></div>
+    {% if a.attachment %}
+    <div class="text-sm"><a href="{{ a.attachment.url }}" target="_blank" class="text-blue-700 hover:underline">
+      <i class="ph ph-paperclip"></i> Reference attachment
+    </a></div>
+    {% endif %}
+    {% if a.title_pt or a.title_tet %}
+    <div class="pt-2 border-t border-zinc-100 text-[11px] text-zinc-500">
+      {% if a.title_pt %}<div>PT: {{ a.title_pt }}</div>{% endif %}
+      {% if a.title_tet %}<div>TET: {{ a.title_tet }}</div>{% endif %}
+    </div>{% endif %}
+    {% if a.description %}
+    <div class="pt-3 border-t border-zinc-100 text-sm text-zinc-700 whitespace-pre-wrap">{{ a.description }}</div>
+    {% endif %}
+  </div>
+
+  <div class="lg:col-span-2 bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
+      <h3 class="font-display font-semibold text-zinc-900">Submissions ({{ submissions.count }})</h3>
+      <span class="text-xs text-zinc-500">Missing: {{ missing.count }}</span>
+    </div>
+    <table class="min-w-full divide-y divide-zinc-200" data-testid="submission-table">
+      <thead class="bg-zinc-50"><tr>
+        <th class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Student</th>
+        <th class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Submitted</th>
+        <th class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Score</th>
+        <th class="px-6 py-2 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+      </tr></thead>
+      <tbody class="divide-y divide-zinc-100">
+        {% for s in submissions %}
+        <tr data-testid="submission-row-{{ s.id }}">
+          <td class="px-6 py-3 text-sm">{{ s.student.full_name }} <span class="text-xs text-zinc-500">({{ s.student.admission_no }})</span></td>
+          <td class="px-6 py-3 text-xs text-zinc-700">{{ s.submitted_at|date:"Y-m-d H:i" }}{% if s.is_late %} <span class="text-red-700">· late</span>{% endif %}</td>
+          <td class="px-6 py-3 text-sm">{% if s.is_graded %}<span class="font-semibold">{{ s.score }}/{{ a.max_score }}</span>{% else %}<span class="text-amber-700">Ungraded</span>{% endif %}</td>
+          <td class="px-6 py-3 text-right text-sm">
+            {% if s.file %}<a href="{{ s.file.url }}" target="_blank" class="text-blue-600 hover:underline mr-3">File</a>{% endif %}
+            <a href="/api/submissions/{{ s.id }}/grade/" class="text-emerald-700 hover:underline">{% if s.is_graded %}Re-grade{% else %}Grade{% endif %}</a>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="4" class="px-6 py-8 text-center text-sm text-zinc-500">No submissions yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% if missing.exists %}
+    <div class="px-6 py-3 bg-amber-50 border-t border-amber-100 text-xs text-amber-900">
+      <b>Not yet submitted ({{ missing.count }}):</b>
+      {% for m in missing %}{{ m.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    </div>{% endif %}
+  </div>
+</div>
+{% endblock %}

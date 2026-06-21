@@ -6,6 +6,7 @@ from .models import (
     JobPosting, Candidate, TrainingProgram, TrainingEnrollment,
     PerformanceReview, EmployeeAttendance, InventoryCategory, InventoryItem,
     InventoryAssignment, TeachingDocument,
+    Assignment, AssignmentSubmission, Announcement, CalendarEvent,
 )
 
 
@@ -228,3 +229,91 @@ class TeachingDocumentForm(forms.ModelForm):
             "file": "PDF only. Max ~25 MB.",
             "subjects": "Tick the subjects this document is for. Leave all unchecked to share with every teacher.",
         }
+
+
+# ---------- Phase 1 — Academic & Communication ----------
+
+
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = [
+            "title", "title_pt", "title_tet", "description",
+            "subject", "class_room", "teacher", "academic_year",
+            "term", "max_score", "due_at", "attachment", "is_published",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 4}),
+            "due_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }
+        help_texts = {
+            "title_pt": "Português (optional)",
+            "title_tet": "Tetum (optional)",
+            "attachment": "Optional reference PDF/image for students.",
+        }
+
+
+class AssignmentGradeForm(forms.ModelForm):
+    """Used by teachers to grade a submission. Optionally promotes the score
+    into the formal Grade table so it appears in the report card."""
+    create_grade_entry = forms.BooleanField(
+        required=False, initial=False,
+        help_text="Also create a Grade row so this score appears in the report card.")
+
+    class Meta:
+        model = AssignmentSubmission
+        fields = ["score", "feedback"]
+        widgets = {"feedback": forms.Textarea(attrs={"rows": 3})}
+
+
+class StudentSubmissionForm(forms.ModelForm):
+    class Meta:
+        model = AssignmentSubmission
+        fields = ["text_answer", "file"]
+        widgets = {"text_answer": forms.Textarea(attrs={"rows": 6})}
+        help_texts = {
+            "text_answer": "Type your answer here (optional if you upload a file).",
+            "file": "Attach a PDF / image / document (optional if you write a text answer).",
+        }
+
+
+class AnnouncementForm(forms.ModelForm):
+    send_email = forms.BooleanField(
+        required=False, initial=True,
+        help_text="Send email to recipients on publish (MOCKED until SendGrid key is set).")
+
+    class Meta:
+        model = Announcement
+        fields = [
+            "title", "title_pt", "title_tet",
+            "body", "body_pt", "body_tet",
+            "audience", "audience_classes", "is_pinned", "expires_at",
+        ]
+        widgets = {
+            "body": forms.Textarea(attrs={"rows": 5}),
+            "body_pt": forms.Textarea(attrs={"rows": 3}),
+            "body_tet": forms.Textarea(attrs={"rows": 3}),
+            "audience_classes": forms.CheckboxSelectMultiple,
+            "expires_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }
+        help_texts = {
+            "audience_classes": "Optional — restrict to specific classes. Leave empty for all classes in the audience.",
+            "expires_at": "Optional — auto-hide after this date/time.",
+        }
+
+
+class CalendarEventForm(forms.ModelForm):
+    class Meta:
+        model = CalendarEvent
+        fields = [
+            "title", "title_pt", "title_tet", "description",
+            "event_type", "start_at", "end_at", "all_day",
+            "location", "audience", "audience_classes",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "start_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "end_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "audience_classes": forms.CheckboxSelectMultiple,
+        }
+

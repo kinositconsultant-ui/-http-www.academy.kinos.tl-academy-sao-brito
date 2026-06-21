@@ -5,6 +5,7 @@ from . import portal_views
 from . import student_views
 from . import hr_views
 from . import teacher_views
+from . import academy_views
 
 urlpatterns = [
     path("", RedirectView.as_view(url="/api/dashboard/", permanent=False)),
@@ -194,4 +195,21 @@ urlpatterns = [
     path("reports/finance/", views.finance_report, name="finance_report"),
     path("reports/academic/", views.academic_report, name="academic_report"),
     path("emails/", views.sent_emails_log, name="sent_emails_log"),
+
+    # Phase 1 — Academic & Communication
+    path("assignments/", academy_views.assignment_list, name="assignment_list"),
+    path("assignments/add/", academy_views.assignment_create, name="assignment_create"),
+    path("assignments/<int:pk>/", academy_views.assignment_detail, name="assignment_detail"),
+    path("assignments/<int:pk>/delete/", academy_views.assignment_delete, name="assignment_delete"),
+    path("submissions/<int:pk>/grade/", academy_views.submission_grade, name="submission_grade"),
+    path("student/assignments/", academy_views.student_assignments, name="student_assignments"),
+    path("student/assignments/<int:pk>/submit/", academy_views.student_submit, name="student_submit"),
+
+    path("announcements/", academy_views.announcement_list, name="announcement_list"),
+    path("announcements/add/", academy_views.announcement_create, name="announcement_create"),
+    path("announcements/<int:pk>/delete/", academy_views.announcement_delete, name="announcement_delete"),
+
+    path("calendar/", academy_views.calendar_view, name="calendar_view"),
+    path("calendar/add/", academy_views.event_create, name="event_create"),
+    path("calendar/<int:pk>/delete/", academy_views.event_delete, name="event_delete"),
 ]

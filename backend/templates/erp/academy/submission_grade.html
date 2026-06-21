@@ -1,0 +1,37 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Grade submission{% endblock %}
+{% block crumb %}Assignments · {{ a.title }} · Grade{% endblock %}
+{% block page_title %}Grade · {{ sub.student.full_name }}{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-1 bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm p-6 space-y-3">
+    <h3 class="font-display font-semibold text-zinc-900">Submission</h3>
+    <div class="text-sm text-zinc-700"><b>Student:</b> {{ sub.student.full_name }} ({{ sub.student.admission_no }})</div>
+    <div class="text-sm text-zinc-700"><b>Submitted:</b> {{ sub.submitted_at|date:"Y-m-d H:i" }}{% if sub.is_late %} <span class="text-red-700">· late</span>{% endif %}</div>
+    <div class="text-sm text-zinc-700"><b>Max score:</b> {{ a.max_score }}</div>
+    {% if sub.file %}<div class="text-sm"><a href="{{ sub.file.url }}" target="_blank" class="text-blue-700 hover:underline"><i class="ph ph-paperclip"></i> Open submitted file</a></div>{% endif %}
+    {% if sub.text_answer %}
+    <div class="pt-3 border-t border-zinc-100">
+      <div class="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">Text answer</div>
+      <div class="text-sm text-zinc-700 whitespace-pre-wrap bg-zinc-50 rounded-md p-3">{{ sub.text_answer }}</div>
+    </div>{% endif %}
+  </div>
+  <div class="lg:col-span-2 bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm p-6">
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+        <div>
+          <label class="block text-sm font-medium text-zinc-700 mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="text-xs text-zinc-500 mt-1">{{ field.help_text }}</div>{% endif %}
+          {% if field.errors %}<div class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+        </div>
+      {% endfor %}
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit" data-testid="save-grade-btn" class="inline-flex items-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">Save grade</button>
+        <a href="/api/assignments/{{ a.id }}/" class="text-sm text-zinc-600 hover:underline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+<div class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm p-6 space-y-4" data-testid="calendar-page">
+  <div class="flex items-center justify-between">
+    <h3 class="font-display font-semibold text-zinc-900">{{ year }} · Month {{ month }}</h3>
+    <form method="get" class="flex items-center gap-2 text-sm">
+      <label class="text-xs uppercase tracking-wider text-zinc-500">Month</label>
+      <input type="number" name="m" value="{{ month }}" min="1" max="12" class="w-20 rounded-md border border-zinc-300 px-2 py-1">
+      <input type="number" name="y" value="{{ year }}" min="2024" max="2100" class="w-24 rounded-md border border-zinc-300 px-2 py-1">
+      <button class="rounded-md bg-zinc-900 text-white px-3 py-1">Go</button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 gap-2" data-testid="calendar-event-list">
+    {% for e in events %}
+    <div class="flex items-start gap-3 p-3 rounded-md ring-1 ring-zinc-100" data-testid="event-{{ e.id }}">
+      <div class="w-1.5 h-12 rounded-full" style="background-color: {{ e.color }}"></div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-medium text-zinc-900">{{ e.title }}</span>
+          <span class="text-[10px] uppercase tracking-wider rounded-md px-2 py-0.5" style="background-color: {{ e.color }}20; color: {{ e.color }}">{{ e.get_event_type_display }}</span>
+          <span class="text-[10px] uppercase tracking-wider bg-zinc-100 text-zinc-600 rounded-md px-2 py-0.5">{{ e.get_audience_display }}</span>
+        </div>
+        <div class="text-xs text-zinc-500">
+          {% if e.all_day %}All day · {{ e.start_at|date:"Y-m-d" }}{% else %}{{ e.start_at|date:"Y-m-d H:i" }}{% if e.end_at %} — {{ e.end_at|date:"H:i" }}{% endif %}{% endif %}
+          {% if e.location %} · {{ e.location }}{% endif %}
+        </div>
+        {% if e.description %}<div class="text-sm text-zinc-700 mt-1 whitespace-pre-wrap">{{ e.description }}</div>{% endif %}
+        {% if e.title_pt or e.title_tet %}<div class="text-[11px] text-zinc-500 mt-1">{% if e.title_pt %}PT: {{ e.title_pt }}{% endif %}{% if e.title_pt and e.title_tet %} · {% endif %}{% if e.title_tet %}TET: {{ e.title_tet }}{% endif %}</div>{% endif %}
+      </div>
+      {% if can_manage %}
+      <form method="post" action="/api/calendar/{{ e.id }}/delete/" onsubmit="return confirm('Delete this event?');">
+        {% csrf_token %}<button class="text-xs text-red-600 hover:underline">Delete</button>
+      </form>{% endif %}
+    </div>
+    {% empty %}<div class="p-12 text-center text-sm text-zinc-500">No events scheduled for this month.</div>{% endfor %}
+  </div>
+</div>

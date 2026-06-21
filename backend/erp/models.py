@@ -797,3 +797,164 @@ class TeachingDocument(models.Model):
     def __str__(self):
         return self.title
 
+
+# =====================================================================
+# Phase 1 — Academic & Communication add-ons (2026-02)
+# Trilingual title support (EN / PT / TET) on user-facing items.
+# =====================================================================
+
+TERM_CHOICES_EXT = [
+    ("t1", "Term 1"),
+    ("t2", "Term 2"),
+    ("t3", "Term 3"),
+    ("s1", "Semester 1"),
+    ("s2", "Semester 2"),
+    ("mid", "Midterm"),
+    ("final", "Final"),
+]
+
+
+class Assignment(models.Model):
+    title = models.CharField(max_length=160, help_text="English title")
+    title_pt = models.CharField(max_length=160, blank=True, help_text="Português")
+    title_tet = models.CharField(max_length=160, blank=True, help_text="Tetum")
+    description = models.TextField(blank=True)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="assignments")
+    class_room = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name="assignments")
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="assignments")
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.SET_NULL, null=True, blank=True)
+    term = models.CharField(max_length=10, choices=TERM_CHOICES_EXT, default="t1")
+    max_score = models.DecimalField(max_digits=6, decimal_places=2, default=100)
+    attachment = models.FileField(upload_to="assignments/", null=True, blank=True,
+                                  help_text="Optional reference material for students")
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    due_at = models.DateTimeField()
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-assigned_at", "-id"]
+
+    def __str__(self):
+        return f"{self.title} — {self.class_room}"
+
+    @property
+    def is_overdue(self):
+        from django.utils import timezone as _tz
+        return _tz.now() > self.due_at
+
+
+class AssignmentSubmission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="submissions")
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="submissions")
+    text_answer = models.TextField(blank=True)
+    file = models.FileField(upload_to="submissions/", null=True, blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    feedback = models.TextField(blank=True)
+    graded_at = models.DateTimeField(null=True, blank=True)
+    graded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                  null=True, blank=True, related_name="graded_submissions")
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        unique_together = [("assignment", "student")]
+
+    def __str__(self):
+        return f"{self.student} → {self.assignment.title}"
+
+    @property
+    def is_graded(self):
+        return self.score is not None
+
+    @property
+    def is_late(self):
+        return self.submitted_at > self.assignment.due_at
+
+
+class Announcement(models.Model):
+    AUDIENCE_CHOICES = [
+        ("all", "Everyone"),
+        ("admin", "Administrators"),
+        ("teacher", "Teachers"),
+        ("parent", "Parents"),
+        ("student", "Students"),
+    ]
+    title = models.CharField(max_length=160)
+    title_pt = models.CharField(max_length=160, blank=True)
+    title_tet = models.CharField(max_length=160, blank=True)
+    body = models.TextField()
+    body_pt = models.TextField(blank=True)
+    body_tet = models.TextField(blank=True)
+    audience = models.CharField(max_length=12, choices=AUDIENCE_CHOICES, default="all")
+    audience_classes = models.ManyToManyField(
+        SchoolClass, blank=True,
+        help_text="Restrict to specific classes (leave empty for all classes in the audience).")
+    is_pinned = models.BooleanField(default=False)
+    published_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                               null=True, blank=True, related_name="announcements")
+    email_sent = models.BooleanField(default=False)
+    email_sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-is_pinned", "-published_at"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_active(self):
+        if not self.expires_at:
+            return True
+        from django.utils import timezone as _tz
+        return _tz.now() <= self.expires_at
+
+
+class CalendarEvent(models.Model):
+    EVENT_TYPES = [
+        ("holiday", "Holiday"),
+        ("exam", "Exam"),
+        ("meeting", "Meeting"),
+        ("training", "Training"),
+        ("event", "School Event"),
+        ("deadline", "Deadline"),
+        ("other", "Other"),
+    ]
+    TYPE_COLORS = {
+        "holiday": "#dc2626",   # red
+        "exam": "#b45309",      # amber
+        "meeting": "#2563eb",   # blue
+        "training": "#7c3aed",  # violet
+        "event": "#059669",     # emerald
+        "deadline": "#db2777",  # pink
+        "other": "#52525b",     # zinc
+    }
+    AUDIENCE_CHOICES = Announcement.AUDIENCE_CHOICES
+
+    title = models.CharField(max_length=160)
+    title_pt = models.CharField(max_length=160, blank=True)
+    title_tet = models.CharField(max_length=160, blank=True)
+    description = models.TextField(blank=True)
+    event_type = models.CharField(max_length=12, choices=EVENT_TYPES, default="event")
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField(null=True, blank=True)
+    all_day = models.BooleanField(default=False)
+    location = models.CharField(max_length=120, blank=True)
+    audience = models.CharField(max_length=12, choices=AUDIENCE_CHOICES, default="all")
+    audience_classes = models.ManyToManyField(SchoolClass, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                   null=True, blank=True, related_name="calendar_events")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["start_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.start_at:%Y-%m-%d})"
+
+    @property
+    def color(self):
+        return self.TYPE_COLORS.get(self.event_type, "#52525b")
+

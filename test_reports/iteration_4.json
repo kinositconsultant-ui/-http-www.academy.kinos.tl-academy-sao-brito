@@ -1,0 +1,36 @@
+{
+  "summary": "Phase 1 (Assignments, Announcements, Calendar) backend regression: 19 PASS / 1 FAIL / 1 SKIP across 21 pytest cases. All audience-scoping, grading-with-Grade-promotion, mocked-SendGrid SentEmail audit, per-role base template selection, and prior PDF/teaching-documents regression endpoints behave as specified. Single FAIL is a template gap: the announcement list template renders title only (English) and never renders title_pt/title_tet as the trilingual spec requires (the body_pt/body_tet are correctly rendered in <details>).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/announcements/ (template _announcement_body.html)", "issue": "Trilingual spec gap: title_pt and title_tet are NOT rendered as secondary lines on the announcement list. assignment_list.html / assignment_detail.html / _calendar_body.html DO render PT/TET title lines, but _announcement_body.html only renders {{ a.title }}. body_pt/body_tet are rendered (collapsible)."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_phase1_academy.py",
+    "/app/test_reports/pytest/pytest_phase1_results.xml"
+  ],
+  "action_items": [
+    "Add PT/TET title rendering to /app/backend/templates/erp/academy/_announcement_body.html — mirror the pattern from assignment_list.html (lines 27-28): `{% if a.title_pt %}<div class=\"text-[11px] text-zinc-500\">PT: {{ a.title_pt }}</div>{% endif %}` and same for title_tet, placed just under the <h3>{{ a.title }}</h3>. Without this fix, multilingual schools cannot present Portuguese / Tetum announcement headlines side-by-side with English, which is the documented trilingual UX promise."
+  ],
+  "critical_code_review_comments": [
+    "academy_views.submission_grade correctly: (a) sets graded_at/graded_by, (b) creates Grade row only when create_grade_entry is checked AND score is not None, (c) uses Assignment.term as Grade.semester ('t1'/'t2'/'t3') and exam_name='Assignment: <title>' — confirmed via /api/grades/ list containing 'Assignment:' after grading flow. Matches spec exactly.",
+    "academy_views.student_submit clears score/feedback/graded_at when text_answer or file changes on a previously-graded submission — verified by re-submission test. Good defensive UX.",
+    "academy_views._filter_for_user correctly scopes by Q(audience='all') | Q(audience=role) for non-staff, and additionally intersects by class_ids for student/parent. Audience='teacher' announcements are correctly hidden from student/parent. audience='admin' calendar events correctly hidden from students.",
+    "_base_template_for switches between dashboard_base / teacher_base / parent_base / student_base — confirmed via 'Academic Years' sidebar absence on student announcement/calendar pages.",
+    "_send_announcement_email writes a SentEmail row per recipient via erp/mail.py (SendGrid MOCKED) and sets email_sent=True + email_sent_at; verified by /api/emails/ row count growing after announcement create with send_email=on.",
+    "Permission boundary: GET /api/assignments/1/delete/ as t-004 returned 200 (not 403) in our run, which means t-004 IS the owner of seed assignment id=1 — so we could not exercise the cross-teacher 403 path. Suggest seeding a 2nd assignment owned by a different teacher to lock in this regression test; currently the test SKIPs.",
+    "academy_views.calendar_view month/year parsing uses int(request.GET.get('m') or today.month) — will raise ValueError on a non-numeric ?m= query param. Add try/except or use safe parsing. Low priority (not exercised by UI).",
+    "academy_views.student_submit uses get_or_create(assignment=a, student=st) — relies on AssignmentSubmission unique_together(assignment, student). Confirmed in models.py:861. Good.",
+    "Trilingual rendering: assignment_list / assignment_detail / _calendar_body all render PT/TET title lines correctly. _announcement_body.html renders body_pt/body_tet as <details> but is missing title_pt/title_tet rendering — see action_items."
+  ],
+  "updated_files": ["/app/backend/tests/test_phase1_academy.py"],
+  "success_rate": {"backend": "95% (19/20 executed passed, 1 skipped on cross-owner data gap, 1 minor template fail)", "frontend": "n/a (backend-only run)"},
+  "test_credentials": "admin/admin123, adm-1003/student123, adm-1005/student123, t-004/teacher123, parent/password123 — all from /app/memory/test_credentials.md.",
+  "seed_data_creation": "Tests created announcements 'TEST_Phase1 Welcome' (audience=all, with PT+TET titles + send_email=on), 'TEST_TeachersOnly' (audience=teacher), and calendar events 'TEST_Phase1 Holiday' (2026-06-15 holiday, audience=all) and 'TEST_AdminOnlyEvent' (2026-06-20 meeting, audience=admin). Submission id=1 was re-graded from 85 to 92 with create_grade_entry=on, which also created a new Grade row labelled 'Assignment: Essay: History of Timor-Leste'. None of these are blocking for re-runs (announcement titles are TEST_ prefixed and grade row is additive).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase 1 routes mounted under /api/. Audience scoping is fully working through _filter_for_user; do not weaken it. Mocked SendGrid writes SentEmail rows visible at /api/emails/. After main agent patches _announcement_body.html to add title_pt/title_tet, re-run only the TestTrilingual class: `pytest backend/tests/test_phase1_academy.py::TestTrilingual -v`. The teacher 403 boundary test SKIPs because t-004 owns the seeded assignment; if a 2nd assignment owned by a different teacher is seeded, remove the skip in TestPermissions.test_teacher_cannot_delete_other_teachers_assignment.",
+  "rca_of_the_issue": "_announcement_body.html template (the partial rendered by announcement_list.html) renders only {{ a.title }} for the headline. Compare to assignment_list.html lines 27-28 which correctly emit `{% if a.title_pt %}<div ...>PT: {{ a.title_pt }}</div>{% endif %}` and same for title_tet. Body_pt / body_tet ARE rendered in _announcement_body.html (lines 22-23) as <details> blocks but the title-level multilingual lines were forgotten. Fix is a 2-line template addition under <h3>."
+}

@@ -28,6 +28,7 @@
         {% include "_nav_item.html" with url="/api/students/" label="Students" icon="ph-student" tid="nav-students" %}
         {% include "_nav_item.html" with url="/api/teachers/" label="Teachers" icon="ph-chalkboard-teacher" tid="nav-teachers" %}
         {% include "_nav_item.html" with url="/api/teaching-documents/" label="Teaching Documents" icon="ph-file-pdf" tid="nav-teaching-docs" %}
+        {% include "_nav_item.html" with url="/api/assignments/" label="Assignments" icon="ph-clipboard-text" tid="nav-assignments" %}
         {% include "_nav_item.html" with url="/api/classes/" label="Classes" icon="ph-buildings" tid="nav-classes" %}
         {% include "_nav_item.html" with url="/api/subjects/" label="Subjects" icon="ph-books" tid="nav-subjects" %}
         {% include "_nav_item.html" with url="/api/attendance/" label="Attendance" icon="ph-calendar-check" tid="nav-attendance" %}
@@ -60,6 +61,12 @@
         {% include "_nav_item.html" with url="/api/hr/inventory/" label="Inventory" icon="ph-package" tid="nav-hr-inventory" %}
         {% include "_nav_item.html" with url="/api/hr/assignments/" label="Asset Assignments" icon="ph-hand-coins" tid="nav-hr-assignments" %}
         {% include "_nav_item.html" with url="/api/leaves/" label="Leave Requests" icon="ph-airplane-tilt" tid="nav-leaves" %}
+      </div>
+
+      <div>
+        <div class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Communication</div>
+        {% include "_nav_item.html" with url="/api/announcements/" label="Announcements" icon="ph-megaphone" tid="nav-announcements" %}
+        {% include "_nav_item.html" with url="/api/calendar/" label="Calendar" icon="ph-calendar" tid="nav-calendar" %}
       </div>
 
       <div>

@@ -45,6 +45,18 @@
           class="px-3 py-3 border-b-2 {% if '/invoices/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
           <i class="ph ph-receipt mr-1"></i> Fees
         </a>
+        <a href="/api/student/assignments/" data-testid="student-nav-assignments"
+          class="px-3 py-3 border-b-2 {% if '/assignments/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-clipboard-text mr-1"></i> Assignments
+        </a>
+        <a href="/api/announcements/" data-testid="student-nav-announcements"
+          class="px-3 py-3 border-b-2 {% if '/announcements/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-megaphone mr-1"></i> Notices
+        </a>
+        <a href="/api/calendar/" data-testid="student-nav-calendar"
+          class="px-3 py-3 border-b-2 {% if '/calendar/' in rp %}border-blue-500 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-calendar mr-1"></i> Calendar
+        </a>
         <a href="/api/student/report-card/" data-testid="student-nav-report-card"
           class="px-3 py-3 border-b-2 border-transparent text-white/70 hover:text-white">
           <i class="ph ph-file-pdf mr-1"></i> Report Card
