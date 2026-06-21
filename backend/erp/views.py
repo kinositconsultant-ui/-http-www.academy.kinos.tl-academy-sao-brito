@@ -13,7 +13,7 @@ from accounts.models import School
 from .models import (
     SchoolClass, Subject, Student, Teacher, Attendance, Grade,
     FeeStructure, FeeInvoice, FeePayment, SalaryPayment, Expense, Income,
-    Donor, Donation, Employee, LeaveRequest, AcademicYear,
+    Donor, Donation, Employee, LeaveRequest, AcademicYear, TeachingDocument,
 )
 from .forms import (
     SchoolClassForm, SubjectForm, StudentForm, TeacherForm, AttendanceForm, GradeForm,
@@ -1060,3 +1060,57 @@ def academic_report(request):
         "by_year": by_year,
         "class_leaderboard": class_leaderboard,
     })
+
+
+# =====================================================================
+# Teaching Documents (admin upload, teacher view)
+# =====================================================================
+
+def _is_admin(u):
+    return u.is_authenticated and (u.is_superuser or u.role in ("admin", "principal"))
+
+
+@login_required
+def teaching_document_list(request):
+    from django.http import HttpResponseForbidden
+    if not _is_admin(request.user):
+        return HttpResponseForbidden("Admin only.")
+    docs = TeachingDocument.objects.prefetch_related("subjects").all()
+    return render(request, "erp/teaching_document_list.html", {"rows": docs})
+
+
+@login_required
+def teaching_document_add(request):
+    from django.http import HttpResponseForbidden
+    from .forms import TeachingDocumentForm
+    if not _is_admin(request.user):
+        return HttpResponseForbidden("Admin only.")
+    if request.method == "POST":
+        form = TeachingDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.uploaded_by = request.user
+            obj.save()
+            form.save_m2m()
+            messages.success(request, "Document uploaded.")
+            return redirect("teaching_document_list")
+    else:
+        form = TeachingDocumentForm()
+    return render(request, "erp/form.html",
+                  {"form": form, "title": "Upload Teaching Document",
+                   "enctype": "multipart/form-data"})
+
+
+@login_required
+def teaching_document_delete(request, pk):
+    from django.http import HttpResponseForbidden
+    if not _is_admin(request.user):
+        return HttpResponseForbidden("Admin only.")
+    doc = get_object_or_404(TeachingDocument, pk=pk)
+    if request.method == "POST":
+        doc.file.delete(save=False)
+        doc.delete()
+        messages.success(request, "Document deleted.")
+        return redirect("teaching_document_list")
+    return render(request, "erp/confirm_delete.html",
+                  {"object": doc, "type": "teaching document"})

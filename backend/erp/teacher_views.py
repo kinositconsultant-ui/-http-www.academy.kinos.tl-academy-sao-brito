@@ -21,7 +21,7 @@ from accounts.models import School
 from .models import (
     Teacher, Student, SchoolClass, Subject, AcademicYear,
     Grade, Attendance, SalaryPayment, LeaveRequest,
-    TrainingEnrollment, StudentEvaluation,
+    TrainingEnrollment, StudentEvaluation, TeachingDocument,
 )
 from .forms import LeaveRequestForm
 
@@ -358,3 +358,26 @@ def create_teacher_login(request, pk):
         request,
         f"Teacher login created. Username: {username} · Password: {password}")
     return redirect("teacher_edit", pk=teacher.pk)
+
+
+@login_required
+def teacher_documents(request):
+    """Teaching documents shared with the logged-in teacher.
+
+    A document is visible if either:
+      - it has NO subjects attached (= shared with all teachers), OR
+      - at least one of its subjects is taught by this teacher.
+    """
+    teacher, redir = _gate(request)
+    if redir:
+        return redir
+    my_subjects = teacher.subjects.all()
+    # Docs with no subjects + docs whose subjects intersect mine
+    from django.db.models import Q
+    docs = (TeachingDocument.objects
+            .filter(Q(subjects__isnull=True) | Q(subjects__in=my_subjects))
+            .prefetch_related("subjects")
+            .distinct())
+    return render(request, "erp/teacher_documents.html", {
+        "teacher": teacher, "rows": docs,
+    })

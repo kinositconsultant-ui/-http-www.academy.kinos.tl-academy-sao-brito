@@ -5,7 +5,7 @@ from .models import (
     Donor, Donation, Employee, LeaveRequest, AcademicYear, CreditNote,
     JobPosting, Candidate, TrainingProgram, TrainingEnrollment,
     PerformanceReview, EmployeeAttendance, InventoryCategory, InventoryItem,
-    InventoryAssignment,
+    InventoryAssignment, TeachingDocument,
 )
 
 
@@ -213,3 +213,18 @@ class InventoryAssignmentForm(forms.ModelForm):
         model = InventoryAssignment
         fields = ["item", "employee", "quantity", "return_by", "status", "note"]
         widgets = {"return_by": forms.DateInput(attrs={"type": "date"})}
+
+
+class TeachingDocumentForm(forms.ModelForm):
+    class Meta:
+        model = TeachingDocument
+        fields = ["title", "doc_type", "description", "file",
+                  "subjects", "academic_year"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+            "subjects": forms.CheckboxSelectMultiple,
+        }
+        help_texts = {
+            "file": "PDF only. Max ~25 MB.",
+            "subjects": "Tick the subjects this document is for. Leave all unchecked to share with every teacher.",
+        }

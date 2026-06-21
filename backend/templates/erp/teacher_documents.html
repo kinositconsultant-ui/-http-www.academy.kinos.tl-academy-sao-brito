@@ -1,0 +1,42 @@
+{% extends "teacher_base.html" %}
+{% block title %}Documents{% endblock %}
+{% block portal_content %}
+<main class="max-w-6xl mx-auto px-6 py-10" data-testid="teacher-documents">
+  <div class="text-[11px] uppercase tracking-widest text-zinc-500">Teaching materials</div>
+  <h1 class="font-display text-3xl font-bold text-zinc-900 tracking-tight">Documents & Syllabi</h1>
+  <p class="mt-1 text-sm text-zinc-500">Materials shared by the administration for your subjects.</p>
+
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for d in rows %}
+    <a href="{{ d.file.url }}" target="_blank" data-testid="doc-card-{{ d.id }}"
+      class="group bg-white rounded-lg border border-zinc-200 p-5 hover:border-red-300 hover:shadow-sm transition flex flex-col">
+      <div class="flex items-start gap-3">
+        <div class="h-10 w-10 rounded-md bg-red-50 flex items-center justify-center text-red-700 group-hover:bg-red-100">
+          <i class="ph-bold ph-file-pdf text-xl"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-display font-semibold text-zinc-900 truncate">{{ d.title }}</div>
+          <div class="text-[10px] uppercase tracking-widest text-zinc-500 mt-0.5">{{ d.get_doc_type_display }}</div>
+        </div>
+      </div>
+      {% if d.description %}<p class="mt-3 text-xs text-zinc-600 line-clamp-3">{{ d.description }}</p>{% endif %}
+      <div class="mt-auto pt-3 flex flex-wrap gap-1">
+        {% for s in d.subjects.all|slice:":3" %}
+          <span class="inline-flex rounded-md px-1.5 py-0.5 text-[10px] bg-zinc-100 text-zinc-700">{{ s.name }}</span>
+        {% empty %}
+          <span class="inline-flex rounded-md px-1.5 py-0.5 text-[10px] bg-emerald-50 text-emerald-700">For all teachers</span>
+        {% endfor %}
+      </div>
+      <div class="mt-3 text-[11px] text-zinc-500 flex items-center justify-between">
+        <span>{{ d.uploaded_at|date:"Y-m-d" }}</span>
+        <span class="text-blue-600 group-hover:underline"><i class="ph ph-download-simple mr-1"></i>Open</span>
+      </div>
+    </a>
+    {% empty %}
+    <div class="col-span-full bg-white rounded-lg border border-zinc-200 p-10 text-center text-zinc-500 text-sm">
+      No documents shared with you yet. Ask administration to upload syllabi or lesson plans for your subjects.
+    </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

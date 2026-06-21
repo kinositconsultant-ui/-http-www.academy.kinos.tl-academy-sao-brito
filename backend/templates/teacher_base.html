@@ -40,6 +40,10 @@
           class="px-3 py-3 border-b-2 {% if '/students/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
           <i class="ph ph-users-three mr-1"></i> My Students
         </a>
+        <a href="/api/teacher/documents/" data-testid="teacher-nav-documents"
+          class="px-3 py-3 border-b-2 {% if '/documents/' in rp %}border-amber-400 text-white{% else %}border-transparent text-white/70 hover:text-white{% endif %}">
+          <i class="ph ph-file-pdf mr-1"></i> Documents
+        </a>
         {% endwith %}
       </div>
     </nav>

@@ -20,6 +20,13 @@ urlpatterns = [
     path("teacher/profile/", teacher_views.teacher_profile, name="teacher_profile"),
     path("teacher/leave/", teacher_views.teacher_leave_request, name="teacher_leave_request"),
     path("teachers/<int:pk>/create-login/", teacher_views.create_teacher_login, name="teacher_create_login"),
+    path("teacher/students/", teacher_views.teacher_students, name="teacher_students"),
+    path("teacher/documents/", teacher_views.teacher_documents, name="teacher_documents"),
+
+    # Teaching documents (admin upload, teacher view)
+    path("teaching-documents/", views.teaching_document_list, name="teaching_document_list"),
+    path("teaching-documents/add/", views.teaching_document_add, name="teaching_document_add"),
+    path("teaching-documents/<int:pk>/delete/", views.teaching_document_delete, name="teaching_document_delete"),
 
     # HR module
     path("hr/", hr_views.hr_dashboard, name="hr_dashboard"),

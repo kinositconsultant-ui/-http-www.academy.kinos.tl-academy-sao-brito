@@ -1,0 +1,50 @@
+{% extends "dashboard_base.html" %}
+{% load humanize %}
+{% block title %}Teaching Documents{% endblock %}
+{% block crumb %}Academics · Teaching Documents{% endblock %}
+{% block page_title %}Teaching Documents{% endblock %}
+{% block topbar_actions %}
+<a href="/api/teaching-documents/add/" data-testid="add-teaching-doc-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800">
+  <i class="ph-bold ph-upload mr-2"></i> Upload Document
+</a>
+{% endblock %}
+{% block content %}
+<div class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+  <table class="min-w-full divide-y divide-zinc-200" data-testid="teaching-docs-table">
+    <thead class="bg-zinc-50"><tr>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Title</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Type</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Subjects</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Uploaded by</th>
+      <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">When</th>
+      <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+    </tr></thead>
+    <tbody class="divide-y divide-zinc-100">
+      {% for d in rows %}
+      <tr data-testid="doc-row-{{ d.id }}">
+        <td class="px-6 py-3 font-medium">
+          <a href="{{ d.file.url }}" target="_blank" class="text-blue-700 hover:underline">
+            <i class="ph ph-file-pdf text-red-600 mr-1"></i>{{ d.title }}
+          </a>
+          {% if d.description %}<div class="text-xs text-zinc-500 mt-1">{{ d.description|truncatechars:80 }}</div>{% endif %}
+        </td>
+        <td class="px-6 py-3 text-zinc-600 capitalize">{{ d.get_doc_type_display }}</td>
+        <td class="px-6 py-3 text-zinc-600 text-xs">
+          {% if d.subjects.exists %}
+            {% for s in d.subjects.all %}<span class="inline-flex rounded-md px-2 py-0.5 text-[10px] bg-zinc-100 mr-1">{{ s.name }}</span>{% endfor %}
+          {% else %}<span class="text-emerald-700 text-[11px] font-medium">All teachers</span>{% endif %}
+        </td>
+        <td class="px-6 py-3 text-zinc-600 text-xs">{{ d.uploaded_by.get_full_name|default:d.uploaded_by.username|default:"—" }}</td>
+        <td class="px-6 py-3 text-zinc-600 text-xs">{{ d.uploaded_at|date:"Y-m-d H:i" }}</td>
+        <td class="px-6 py-3 text-right">
+          <a href="{{ d.file.url }}" target="_blank" class="text-blue-600 hover:underline text-sm mr-3">Open</a>
+          <form method="post" action="/api/teaching-documents/{{ d.id }}/delete/" class="inline" onsubmit="return confirm('Delete this document?');">
+            {% csrf_token %}<button class="text-red-600 hover:underline text-sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">No documents uploaded yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -752,3 +752,48 @@ class StudentEvaluation(models.Model):
     def __str__(self):
         return f"{self.get_category_display()} · {self.student.full_name}"
 
+
+
+def _validate_pdf(file):
+    """File validator — accepts only PDF uploads."""
+    from django.core.exceptions import ValidationError
+    if not file.name.lower().endswith(".pdf"):
+        raise ValidationError("Only PDF files are accepted.")
+
+
+class TeachingDocument(models.Model):
+    """PDF documents admin uploads for teachers (syllabi, lesson plans, etc.).
+
+    `subjects` empty = visible to ALL teachers.
+    Otherwise only teachers who teach at least one of the listed subjects can see it.
+    """
+    TYPE = [
+        ("syllabus", "Syllabus"),
+        ("lesson_plan", "Lesson Plan"),
+        ("handout", "Handout / Worksheet"),
+        ("policy", "School Policy"),
+        ("training", "Training Material"),
+        ("other", "Other"),
+    ]
+    title = models.CharField(max_length=160)
+    description = models.TextField(blank=True)
+    doc_type = models.CharField(max_length=12, choices=TYPE, default="syllabus")
+    file = models.FileField(upload_to="teaching_docs/", validators=[_validate_pdf])
+    subjects = models.ManyToManyField(
+        Subject, blank=True, related_name="teaching_documents",
+        help_text="Pick the subjects this document is for. Leave empty to share "
+                  "with ALL teachers.")
+    academic_year = models.ForeignKey(
+        AcademicYear, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="teaching_documents")
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="uploaded_documents")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at", "-id"]
+
+    def __str__(self):
+        return self.title
+
