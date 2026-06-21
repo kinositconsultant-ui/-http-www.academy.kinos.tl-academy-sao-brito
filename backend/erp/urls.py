@@ -221,4 +221,10 @@ urlpatterns = [
     path("lesson-plans/", academy_views.lesson_plan_list, name="lesson_plan_list"),
     path("lesson-plans/add/", academy_views.lesson_plan_create, name="lesson_plan_create"),
     path("lesson-plans/<int:pk>/delete/", academy_views.lesson_plan_delete, name="lesson_plan_delete"),
+
+    # Phase 3 — LMS
+    path("learning/", academy_views.learning_material_list, name="learning_material_list"),
+    path("learning/add/", academy_views.learning_material_create, name="learning_material_create"),
+    path("learning/<int:pk>/", academy_views.learning_material_detail, name="learning_material_detail"),
+    path("learning/<int:pk>/delete/", academy_views.learning_material_delete, name="learning_material_delete"),
 ]

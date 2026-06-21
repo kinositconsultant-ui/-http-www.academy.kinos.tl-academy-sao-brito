@@ -1039,3 +1039,85 @@ class LessonPlan(models.Model):
 
     def __str__(self):
         return f"{self.title} — {self.class_room} ({self.week_start})"
+
+# =====================================================================
+# Phase 3 — LMS / Online Learning Materials (2026-02)
+# =====================================================================
+
+class LearningMaterial(models.Model):
+    MATERIAL_TYPES = [
+        ("video", "Video"),
+        ("link", "External Link"),
+        ("pdf", "PDF / Document"),
+        ("slides", "Slides"),
+        ("other", "Other"),
+    ]
+    TYPE_ICONS = {
+        "video": ("ph-play-circle", "#dc2626"),
+        "link": ("ph-link", "#2563eb"),
+        "pdf": ("ph-file-pdf", "#b91c1c"),
+        "slides": ("ph-projector-screen", "#7c3aed"),
+        "other": ("ph-file", "#52525b"),
+    }
+
+    title = models.CharField(max_length=160)
+    title_pt = models.CharField(max_length=160, blank=True)
+    title_tet = models.CharField(max_length=160, blank=True)
+    description = models.TextField(blank=True)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE,
+                                related_name="materials")
+    class_room = models.ForeignKey(
+        SchoolClass, on_delete=models.CASCADE, related_name="materials",
+        null=True, blank=True,
+        help_text="Leave empty to share with every class taking this subject.")
+    material_type = models.CharField(max_length=10, choices=MATERIAL_TYPES,
+                                     default="link")
+    url = models.URLField(blank=True,
+                          help_text="YouTube/Vimeo URL for videos, or any external link.")
+    file = models.FileField(upload_to="learning_materials/", null=True, blank=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL,
+                                null=True, blank=True, related_name="materials")
+    week_no = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Optional — week / module number for grouping.")
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["subject__name", "week_no", "-created_at"]
+
+    def __str__(self):
+        return f"{self.title} — {self.subject.name}"
+
+    @property
+    def icon(self):
+        return self.TYPE_ICONS.get(self.material_type, self.TYPE_ICONS["other"])[0]
+
+    @property
+    def color(self):
+        return self.TYPE_ICONS.get(self.material_type, self.TYPE_ICONS["other"])[1]
+
+    @property
+    def embed_url(self):
+        """Return an embeddable URL for YouTube / Vimeo. Empty string if N/A."""
+        if self.material_type != "video" or not self.url:
+            return ""
+        u = self.url.strip()
+        # YouTube — youtu.be/<id>, watch?v=<id>, shorts/<id>
+        if "youtu.be/" in u:
+            vid = u.split("youtu.be/")[-1].split("?")[0].split("&")[0]
+            return f"https://www.youtube.com/embed/{vid}"
+        if "youtube.com/watch" in u and "v=" in u:
+            vid = u.split("v=")[-1].split("&")[0]
+            return f"https://www.youtube.com/embed/{vid}"
+        if "youtube.com/shorts/" in u:
+            vid = u.split("shorts/")[-1].split("?")[0]
+            return f"https://www.youtube.com/embed/{vid}"
+        # Vimeo
+        if "vimeo.com/" in u:
+            vid = u.rstrip("/").split("/")[-1].split("?")[0]
+            if vid.isdigit():
+                return f"https://player.vimeo.com/video/{vid}"
+        return ""
+

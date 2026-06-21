@@ -1,0 +1,12 @@
+{% extends base_template %}
+{% block title %}{{ m.title }}{% endblock %}
+{% block crumb %}Learning · {{ m.subject.name }} · {{ m.title }}{% endblock %}
+{% block page_title %}{{ m.title }}{% endblock %}
+{% block content %}{% include "erp/academy/_learning_material_detail_body.html" %}{% endblock %}
+{% block portal_content %}
+<div class="max-w-5xl mx-auto px-6 py-8 space-y-4">
+  <a href="/api/learning/" class="text-sm text-zinc-500 hover:underline"><i class="ph ph-arrow-left"></i> All materials</a>
+  <h1 class="font-display text-2xl font-semibold text-zinc-900">{{ m.title }}</h1>
+  {% include "erp/academy/_learning_material_detail_body.html" %}
+</div>
+{% endblock %}

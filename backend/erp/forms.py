@@ -7,7 +7,7 @@ from .models import (
     PerformanceReview, EmployeeAttendance, InventoryCategory, InventoryItem,
     InventoryAssignment, TeachingDocument,
     Assignment, AssignmentSubmission, Announcement, CalendarEvent,
-    StudentDocument, LessonPlan,
+    StudentDocument, LessonPlan, LearningMaterial,
 )
 
 
@@ -352,3 +352,31 @@ class LessonPlanForm(forms.ModelForm):
             "teacher": "Required when an admin creates the plan; auto-filled for teachers.",
         }
 
+
+
+
+class LearningMaterialForm(forms.ModelForm):
+    class Meta:
+        model = LearningMaterial
+        fields = ["title", "title_pt", "title_tet",
+                  "subject", "class_room", "teacher",
+                  "material_type", "url", "file",
+                  "description", "week_no", "is_published"]
+        widgets = {"description": forms.Textarea(attrs={"rows": 3})}
+        help_texts = {
+            "url": "YouTube / Vimeo URL for video, or any external link.",
+            "file": "Upload PDF / slides / document. Optional if `url` is set.",
+            "class_room": "Leave empty to share with every class taking this subject.",
+            "teacher": "Required when an admin uploads; auto-filled for teachers.",
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        mtype = cleaned.get("material_type")
+        url = cleaned.get("url")
+        f = cleaned.get("file")
+        if mtype in ("video", "link") and not url:
+            self.add_error("url", f"A URL is required for {mtype} material.")
+        if mtype in ("pdf", "slides") and not f and not url:
+            self.add_error("file", "Either upload a file or provide a URL.")
+        return cleaned

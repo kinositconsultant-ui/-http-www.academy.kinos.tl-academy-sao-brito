@@ -15,12 +15,12 @@ from accounts.models import School
 from .forms import (
     AssignmentForm, AssignmentGradeForm, StudentSubmissionForm,
     AnnouncementForm, CalendarEventForm,
-    StudentDocumentForm, LessonPlanForm,
+    StudentDocumentForm, LessonPlanForm, LearningMaterialForm,
 )
 from .models import (
     Assignment, AssignmentSubmission, Announcement, CalendarEvent,
     Student, Teacher, Grade, SchoolClass,
-    StudentDocument, LessonPlan,
+    StudentDocument, LessonPlan, LearningMaterial,
 )
 
 
@@ -566,3 +566,117 @@ def today_widget_context(user):
         "upcoming_assignments": upcoming_assignments,
         "widget_today": today,
     }
+
+
+# =====================================================================
+# LMS — Learning Materials
+# =====================================================================
+
+@login_required
+def learning_material_list(request):
+    u = request.user
+    qs = LearningMaterial.objects.select_related("subject", "class_room", "teacher")
+    role = getattr(u, "role", "")
+    if u.is_superuser or role in ("admin", "principal"):
+        items = qs
+    elif role == "teacher":
+        items = qs  # teachers see all (they may borrow each other's material)
+    elif role == "student":
+        st = Student.objects.filter(student_user=u).first()
+        if not st:
+            return HttpResponseForbidden("No student profile.")
+        items = qs.filter(is_published=True).filter(
+            Q(class_room__isnull=True) | Q(class_room=st.school_class))
+    elif role == "parent":
+        class_ids = list(Student.objects.filter(parent_users=u)
+                         .values_list("school_class_id", flat=True))
+        items = qs.filter(is_published=True).filter(
+            Q(class_room__isnull=True) | Q(class_room_id__in=class_ids))
+    else:
+        return HttpResponseForbidden("Not allowed.")
+
+    # Optional subject filter
+    subj = request.GET.get("subject")
+    if subj and subj.isdigit():
+        items = items.filter(subject_id=int(subj))
+
+    # Group by subject for the card grid
+    by_subject = {}
+    for m in items:
+        by_subject.setdefault(m.subject, []).append(m)
+
+    return render(request, "erp/academy/learning_material_list.html", {
+        "items": items, "by_subject": by_subject,
+        "subjects": [s for s, _ in by_subject.items()],
+        "selected_subject": int(subj) if subj and subj.isdigit() else None,
+        "school": School.get_active(),
+        "base_template": _base_template_for(u),
+        "can_manage": u.is_superuser or role in ("teacher", "admin", "principal"),
+    })
+
+
+@login_required
+def learning_material_detail(request, pk):
+    m = get_object_or_404(LearningMaterial, pk=pk)
+    u = request.user
+    role = getattr(u, "role", "")
+    if not (u.is_superuser or role in ("admin", "principal", "teacher")):
+        if not m.is_published:
+            return HttpResponseForbidden("Not published.")
+        if role == "student":
+            st = Student.objects.filter(student_user=u).first()
+            if st and m.class_room_id and m.class_room_id != st.school_class_id:
+                return HttpResponseForbidden("Not for your class.")
+        elif role == "parent":
+            class_ids = list(Student.objects.filter(parent_users=u)
+                             .values_list("school_class_id", flat=True))
+            if m.class_room_id and m.class_room_id not in class_ids:
+                return HttpResponseForbidden("Not for your children.")
+    return render(request, "erp/academy/learning_material_detail.html", {
+        "m": m,
+        "school": School.get_active(),
+        "base_template": _base_template_for(u),
+    })
+
+
+@login_required
+def learning_material_create(request):
+    u = request.user
+    if not _is_teacher(u):
+        return HttpResponseForbidden("Teachers / admins only.")
+    initial = {}
+    if getattr(u, "role", "") == "teacher":
+        t = Teacher.objects.filter(teacher_user=u).first()
+        if t:
+            initial["teacher"] = t
+            initial["subject"] = t.subjects.first()
+    form = LearningMaterialForm(request.POST or None, request.FILES or None, initial=initial)
+    if getattr(u, "role", "") == "teacher":
+        form.fields["teacher"].disabled = True
+    if form.is_valid():
+        m = form.save(commit=False)
+        if getattr(u, "role", "") == "teacher":
+            m.teacher = Teacher.objects.filter(teacher_user=u).first()
+        m.save()
+        messages.success(request, f"Material '{m.title}' uploaded.")
+        return redirect("learning_material_list")
+    return render(request, "erp/form.html", {
+        "form": form, "title": "Add learning material",
+        "back": "learning_material_list"})
+
+
+@login_required
+def learning_material_delete(request, pk):
+    m = get_object_or_404(LearningMaterial, pk=pk)
+    u = request.user
+    role = getattr(u, "role", "")
+    if not (u.is_superuser or role in ("admin", "principal")
+            or (role == "teacher" and m.teacher and m.teacher.teacher_user_id == u.id)):
+        return HttpResponseForbidden("Not allowed.")
+    if request.method == "POST":
+        m.delete()
+        messages.success(request, "Material removed.")
+        return redirect("learning_material_list")
+    return render(request, "erp/confirm_delete.html",
+                  {"object": m, "back": "learning_material_list"})
+

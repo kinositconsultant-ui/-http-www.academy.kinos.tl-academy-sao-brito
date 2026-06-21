@@ -1,0 +1,23 @@
+{% extends base_template %}
+{% block title %}Learning Materials{% endblock %}
+{% block crumb %}Academics · Learning Materials{% endblock %}
+{% block page_title %}Learning Materials{% endblock %}
+{% block topbar_actions %}
+{% if can_manage %}
+<a href="/api/learning/add/" data-testid="add-material-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800">
+  <i class="ph-bold ph-plus mr-2"></i> Add material
+</a>{% endif %}
+{% endblock %}
+{% block content %}{% include "erp/academy/_learning_material_body.html" %}{% endblock %}
+{% block portal_content %}
+<div class="max-w-6xl mx-auto px-6 py-8 space-y-4">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <h1 class="font-display text-2xl font-semibold text-zinc-900">Learning Materials</h1>
+    {% if can_manage %}
+    <a href="/api/learning/add/" data-testid="add-material-btn" class="inline-flex items-center rounded-md bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-800">
+      <i class="ph-bold ph-plus mr-2"></i> Add material
+    </a>{% endif %}
+  </div>
+  {% include "erp/academy/_learning_material_body.html" %}
+</div>
+{% endblock %}

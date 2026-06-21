@@ -1,0 +1,35 @@
+<div class="space-y-6" data-testid="learning-material-list">
+  {% if not by_subject %}
+    <div class="bg-white ring-1 ring-zinc-200 rounded-lg p-12 text-center text-sm text-zinc-500">No learning materials yet.</div>
+  {% endif %}
+  {% for subject, mats in by_subject.items %}
+  <section class="bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden" data-testid="subject-block-{{ subject.id }}">
+    <header class="px-6 py-3 border-b border-zinc-100 bg-zinc-50 flex items-center justify-between">
+      <h3 class="font-display font-semibold text-zinc-900">{{ subject.name }}</h3>
+      <span class="text-xs text-zinc-500">{{ mats|length }} item{{ mats|length|pluralize }}</span>
+    </header>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5">
+      {% for m in mats %}
+      <a href="/api/learning/{{ m.id }}/" data-testid="material-card-{{ m.id }}"
+         class="block ring-1 ring-zinc-200 hover:ring-red-500 rounded-md p-4 transition-colors group">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-md flex items-center justify-center shrink-0" style="background-color: {{ m.color }}20; color: {{ m.color }}">
+            <i class="ph-bold {{ m.icon }} text-xl"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-medium text-zinc-900 group-hover:text-red-700 truncate">{{ m.title }}</span>
+              <span class="text-[10px] uppercase tracking-wider rounded-md px-2 py-0.5 bg-zinc-100 text-zinc-700">{{ m.get_material_type_display }}</span>
+              {% if not m.is_published %}<span class="text-[10px] uppercase tracking-wider rounded-md px-2 py-0.5 bg-amber-100 text-amber-800">Draft</span>{% endif %}
+            </div>
+            {% if m.week_no %}<div class="text-xs text-zinc-500">Week {{ m.week_no }}</div>{% endif %}
+            {% if m.class_room %}<div class="text-xs text-zinc-500">{{ m.class_room }}</div>{% else %}<div class="text-xs text-zinc-400">All classes</div>{% endif %}
+            {% if m.description %}<div class="text-xs text-zinc-600 mt-1 line-clamp-2">{{ m.description|truncatechars:90 }}</div>{% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>

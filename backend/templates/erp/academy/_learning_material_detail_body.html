@@ -1,0 +1,56 @@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" data-testid="material-detail">
+  <aside class="lg:col-span-1 bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm p-6 space-y-3">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-md flex items-center justify-center" style="background-color: {{ m.color }}20; color: {{ m.color }}">
+        <i class="ph-bold {{ m.icon }} text-2xl"></i>
+      </div>
+      <div>
+        <div class="font-display font-semibold text-zinc-900">{{ m.title }}</div>
+        <div class="text-xs text-zinc-500">{{ m.get_material_type_display }}</div>
+      </div>
+    </div>
+    {% if m.title_pt %}<div class="text-[11px] text-zinc-500">PT: {{ m.title_pt }}</div>{% endif %}
+    {% if m.title_tet %}<div class="text-[11px] text-zinc-500">TET: {{ m.title_tet }}</div>{% endif %}
+    <div class="pt-3 border-t border-zinc-100 space-y-2 text-sm text-zinc-700">
+      <div><b>Subject:</b> {{ m.subject.name }}</div>
+      <div><b>Class:</b> {% if m.class_room %}{{ m.class_room }}{% else %}All classes{% endif %}</div>
+      {% if m.teacher %}<div><b>Uploaded by:</b> {{ m.teacher.full_name }}</div>{% endif %}
+      {% if m.week_no %}<div><b>Week:</b> {{ m.week_no }}</div>{% endif %}
+      <div class="text-xs text-zinc-500">Added {{ m.created_at|date:"Y-m-d" }}</div>
+    </div>
+    {% if m.description %}<div class="pt-3 border-t border-zinc-100 text-sm text-zinc-700 whitespace-pre-wrap">{{ m.description }}</div>{% endif %}
+  </aside>
+
+  <div class="lg:col-span-2 bg-white ring-1 ring-zinc-200 rounded-lg shadow-sm overflow-hidden">
+    {% if m.embed_url %}
+      <div class="aspect-video bg-black">
+        <iframe src="{{ m.embed_url }}" class="w-full h-full" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    {% elif m.material_type == "video" and m.url %}
+      <div class="p-12 text-center">
+        <i class="ph ph-play-circle text-6xl text-red-600 mb-3"></i>
+        <p class="text-sm text-zinc-600 mb-4">Open the video on the original platform</p>
+        <a href="{{ m.url }}" target="_blank" rel="noopener" class="inline-flex items-center rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">Watch video</a>
+      </div>
+    {% elif m.file %}
+      {% if m.file.url|lower|slice:"-4:" == ".pdf" %}
+        <iframe src="{{ m.file.url }}#toolbar=0" class="w-full" style="height: 75vh" frameborder="0"></iframe>
+      {% else %}
+        <div class="p-12 text-center">
+          <i class="ph {{ m.icon }} text-6xl mb-3" style="color: {{ m.color }}"></i>
+          <p class="text-sm text-zinc-600 mb-4">{{ m.file.name }}</p>
+          <a href="{{ m.file.url }}" target="_blank" rel="noopener" class="inline-flex items-center rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">Open file</a>
+        </div>
+      {% endif %}
+    {% elif m.url %}
+      <div class="p-12 text-center">
+        <i class="ph ph-link text-6xl text-blue-600 mb-3"></i>
+        <p class="text-sm text-zinc-600 mb-4 break-all">{{ m.url }}</p>
+        <a href="{{ m.url }}" target="_blank" rel="noopener" class="inline-flex items-center rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">Open link</a>
+      </div>
+    {% else %}
+      <div class="p-12 text-center text-sm text-zinc-500">No content attached.</div>
+    {% endif %}
+  </div>
+</div>
